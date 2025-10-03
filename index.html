@@ -1,20 +1,345 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My First Three.js App</title>
+    <title>Block Runner Game</title>
     <style>
-      /* Remove default margin and hide scrollbars */
       body {
         margin: 0;
-        overflow: hidden;
+        background: #0c4a6e;
+      }
+      /* NEW: Style for the Game Over screen */
+      #gameOverScreen {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 4rem;
+        text-align: center;
+        background-color: rgba(0, 0, 0, 0.7);
+        padding: 20px;
+        border-radius: 10px;
+        display: none; /* Hidden by default */
       }
     </style>
-  </head>
-  <body>
-    <canvas class="webgl"></canvas>
+</head>
+<body>
+    <div id="gameOverScreen">GAME OVER</div>
 
-    <script type="module" src="/main.js"></script>
-  </body>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.150.1/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from 'three'
+
+      const scene = new THREE.Scene()
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      )
+
+      const renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true
+      })
+      renderer.shadowMap.enabled = true
+      renderer.setSize(window.innerWidth, window.innerHeight)
+      document.body.appendChild(renderer.domElement)
+
+      // The original Box class, our blueprint for all cubes
+      class Box extends THREE.Mesh {
+        constructor({
+          width,
+          height,
+          depth,
+          color = '#00ff00',
+          velocity = { x: 0, y: 0, z: 0 },
+          position = { x: 0, y: 0, z: 0 }
+        }) {
+          super(
+            new THREE.BoxGeometry(width, height, depth),
+            new THREE.MeshStandardMaterial({ color })
+          )
+          this.width = width
+          this.height = height
+          this.depth = depth
+
+          this.position.set(position.x, position.y, position.z)
+
+          this.velocity = velocity
+          this.gravity = -0.004
+
+          this.updateSides()
+        }
+
+        updateSides() {
+          this.right = this.position.x + this.width / 2
+          this.left = this.position.x - this.width / 2
+          this.bottom = this.position.y - this.height / 2
+          this.top = this.position.y + this.height / 2
+          this.front = this.position.z + this.depth / 2
+          this.back = this.position.z - this.depth / 2
+        }
+
+        update(grounds) { // MODIFIED: Accepts an array of grounds
+          this.updateSides()
+          this.position.x += this.velocity.x
+          this.position.z += this.velocity.z
+          this.applyGravity(grounds)
+        }
+
+        applyGravity(grounds) { // MODIFIED: Checks collision against all ground segments
+          this.velocity.y += this.gravity
+          
+          let isOnGround = false;
+          for (const ground of grounds) {
+            if (boxCollision({ box1: this, box2: ground })) {
+              isOnGround = true;
+              break;
+            }
+          }
+
+          if (isOnGround) {
+            const friction = 0.5
+            this.velocity.y *= friction
+            this.velocity.y = -this.velocity.y
+          } else {
+            this.position.y += this.velocity.y
+          }
+        }
+      }
+
+      const groundTopY = -1.75; // The Y-level of the ground surface
+
+      // Obstacle 1: Swinging Bars
+      class SwingingBars {
+        constructor(position) {
+          this.group = new THREE.Group()
+          // MODIFIED: Y position is now aligned with the ground
+          position.y = groundTopY + 0.25;
+          this.group.position.copy(position)
+          scene.add(this.group)
+
+          const barGeometry = new THREE.BoxGeometry(0.3, 0.5, 4)
+          const barMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 })
+
+          this.bar1 = new THREE.Mesh(barGeometry, barMaterial)
+          this.bar1.position.z = -2
+          this.bar1.castShadow = true
+
+          this.bar2 = new THREE.Mesh(barGeometry, barMaterial)
+          this.bar2.position.z = 2
+          this.bar2.castShadow = true
+
+          this.pivot1 = new THREE.Object3D()
+          this.pivot1.position.x = -2.5
+          this.pivot1.add(this.bar1)
+          
+          this.pivot2 = new THREE.Object3D()
+          this.pivot2.position.x = 2.5
+          this.pivot2.add(this.bar2)
+
+          this.group.add(this.pivot1)
+          this.group.add(this.pivot2)
+          
+          this.colliders = [this.bar1, this.bar2]
+        }
+
+        update() {
+          const time = Date.now() * 0.001
+          this.pivot1.rotation.y = Math.sin(time) * 1.5 
+          this.pivot2.rotation.y = -Math.sin(time) * 1.5
+        }
+      }
+      
+      // Obstacle 2: Sliding Wall
+      class SlidingWall {
+        constructor(position) {
+          const wallHeight = 2;
+          // MODIFIED: Y position is calculated to sit on the ground
+          position.y = groundTopY + wallHeight / 2;
+          
+          this.mesh = new Box({
+            width: 2.5,
+            height: wallHeight,
+            depth: 0.5,
+            color: 'orange',
+            position
+          })
+          this.mesh.castShadow = true
+          scene.add(this.mesh)
+          
+          this.colliders = [this.mesh]
+        }
+        
+        update() {
+          const time = Date.now() * 0.0008
+          this.mesh.position.x = Math.sin(time) * 3.75 
+          this.mesh.updateSides()
+        }
+      }
+
+      function boxCollision({ box1, box2 }) {
+        const box1WorldPos = new THREE.Vector3();
+        box1.getWorldPosition(box1WorldPos);
+        
+        const box2WorldPos = new THREE.Vector3();
+        box2.getWorldPosition(box2WorldPos);
+
+        const box1Sides = {
+            left: box1WorldPos.x - box1.geometry.parameters.width / 2,
+            right: box1WorldPos.x + box1.geometry.parameters.width / 2,
+            bottom: box1WorldPos.y - box1.geometry.parameters.height / 2,
+            top: box1WorldPos.y + box1.geometry.parameters.height / 2,
+            back: box1WorldPos.z - box1.geometry.parameters.depth / 2,
+            front: box1WorldPos.z + box1.geometry.parameters.depth / 2
+        };
+
+        const box2Sides = {
+            left: box2WorldPos.x - box2.geometry.parameters.width / 2,
+            right: box2WorldPos.x + box2.geometry.parameters.width / 2,
+            bottom: box2WorldPos.y - box2.geometry.parameters.height / 2,
+            top: box2WorldPos.y + box2.geometry.parameters.height / 2,
+            back: box2WorldPos.z - box2.geometry.parameters.depth / 2,
+            front: box2WorldPos.z + box2.geometry.parameters.depth / 2
+        };
+
+        return (
+            box1Sides.right >= box2Sides.left &&
+            box1Sides.left <= box2Sides.right &&
+            box1Sides.top >= box2Sides.bottom &&
+            box1Sides.bottom <= box2Sides.top &&
+            box1Sides.front >= box2Sides.back &&
+            box1Sides.back <= box2Sides.front
+        );
+      }
+      
+      const player = new Box({
+        width: 1, height: 1, depth: 1,
+        velocity: { x: 0, y: -0.01, z: 0 }
+      })
+      player.castShadow = true
+      scene.add(player)
+
+      // --- NEW: Infinite Ground Setup ---
+      const grounds = []
+      const groundWidth = 10
+      const groundDepth = 200
+      for (let i = 0; i < 2; i++) {
+        const ground = new Box({
+            width: groundWidth, height: 0.5, depth: groundDepth,
+            color: '#0369a1',
+            position: { x: 0, y: -2, z: -i * groundDepth }
+        });
+        ground.receiveShadow = true;
+        scene.add(ground);
+        grounds.push(ground);
+      }
+      // --- End of Infinite Ground Setup ---
+
+      const light = new THREE.DirectionalLight(0xffffff, 1)
+      light.position.y = 3
+      light.position.z = 1
+      light.castShadow = true
+      scene.add(light)
+      scene.add(new THREE.AmbientLight(0xffffff, 0.5))
+
+      const keys = { a: { pressed: false }, d: { pressed: false } }
+
+      window.addEventListener('keydown', (event) => {
+        switch (event.code) {
+          case 'KeyA': keys.a.pressed = true; break
+          case 'KeyD': keys.d.pressed = true; break
+          case 'Space': 
+            let onAnyGround = false;
+            for(const ground of grounds){
+                if(player.position.y <= ground.top + 0.1){
+                    onAnyGround = true;
+                    break;
+                }
+            }
+            if (onAnyGround) {
+                player.velocity.y = 0.12
+            }
+            break
+        }
+      })
+
+      window.addEventListener('keyup', (event) => {
+        switch (event.code) {
+          case 'KeyA': keys.a.pressed = false; break
+          case 'KeyD': keys.d.pressed = false; break
+        }
+      })
+
+      const obstacles = []
+      const obstacleTypes = [SwingingBars, SlidingWall]
+      let lastSpawnZ = -20
+      const spawnInterval = 25
+
+      function spawnObstacle() {
+        const ObstacleClass = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)]
+        const position = new THREE.Vector3(0, 0, lastSpawnZ - spawnInterval)
+        const newObstacle = new ObstacleClass(position)
+        obstacles.push(newObstacle)
+        lastSpawnZ -= spawnInterval
+      }
+
+      for (let i=0; i < 5; i++) { spawnObstacle() }
+
+      let animationId
+      function animate() {
+        animationId = requestAnimationFrame(animate)
+        renderer.render(scene, camera)
+
+        player.velocity.x = 0
+        player.velocity.z = -0.1
+
+        if (keys.a.pressed) player.velocity.x = -0.05
+        else if (keys.d.pressed) player.velocity.x = 0.05
+
+        player.update(grounds) // MODIFIED: Pass grounds array to player update
+        
+        obstacles.forEach((obstacle) => {
+          obstacle.update()
+          
+          obstacle.colliders.forEach(collider => {
+            if (boxCollision({ box1: player, box2: collider })) {
+              // MODIFIED: Show Game Over screen and stop the game
+              document.getElementById('gameOverScreen').style.display = 'block';
+              cancelAnimationFrame(animationId)
+            }
+          })
+        })
+        
+        const cameraOffset = new THREE.Vector3(0, 4, 8)
+        camera.position.copy(player.position).add(cameraOffset)
+        camera.lookAt(player.position)
+
+        if (player.position.z < lastSpawnZ + 100) { spawnObstacle() }
+
+        // --- NEW: Ground Recycling Logic ---
+        grounds.forEach(ground => {
+            // Check if a ground segment is fully behind the camera
+            if (camera.position.z < ground.position.z - ground.depth / 2) {
+                // Move it ahead by the total length of all ground segments
+                ground.position.z -= grounds.length * ground.depth;
+            }
+        });
+      }
+      animate()
+    </script>
+</body>
 </html>
