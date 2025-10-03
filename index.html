@@ -27,7 +27,15 @@
     </style>
 </head>
 <body>
-    <div id="gameOverScreen">GAME OVER</div>
+    <div id="gameOverScreen">
+      <div style="text-align: center;">
+        <h1 style="color: #ff4444; margin-bottom: 20px;">💥 GAME OVER 💥</h1>
+        <p style="font-size: 1.5rem; margin-bottom: 30px;">You hit an obstacle!</p>
+        <p style="font-size: 1rem; color: #cccccc;">Use A and D keys to dodge obstacles</p>
+        <p style="font-size: 1rem; color: #cccccc;">Press SPACE to jump over obstacles</p>
+        <p style="font-size: 1rem; color: #cccccc;">Try to survive as long as possible!</p>
+      </div>
+    </div>
 
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
@@ -191,6 +199,209 @@
         }
       }
 
+      // NEW: Obstacle 3: Moving Pillars
+      class MovingPillars {
+        constructor(position) {
+          this.group = new THREE.Group()
+          position.y = groundTopY + 1
+          this.group.position.copy(position)
+          scene.add(this.group)
+          
+          this.colliders = []
+          
+          // Create 3 pillars that move independently
+          const colors = ['red', 'purple', 'cyan']
+          const offsets = [-3, 0, 3]
+          
+          offsets.forEach((offset, index) => {
+            const pillar = new Box({
+              width: 0.8,
+              height: 3,
+              depth: 0.8,
+              color: colors[index],
+              position: { x: offset, y: 1.5, z: 0 }
+            })
+            pillar.castShadow = true
+            this.group.add(pillar)
+            this.colliders.push(pillar)
+          })
+        }
+        
+        update() {
+          const time = Date.now() * 0.001
+          this.group.children.forEach((pillar, index) => {
+            pillar.position.x = [-3, 0, 3][index] + Math.sin(time + index) * 2
+            pillar.position.z = Math.cos(time * 1.2 + index) * 1.5
+          })
+        }
+      }
+
+      // NEW: Obstacle 4: Spinning Cubes
+      class SpinningCubes {
+        constructor(position) {
+          this.group = new THREE.Group()
+          position.y = groundTopY + 0.5
+          this.group.position.copy(position)
+          scene.add(this.group)
+          
+          this.colliders = []
+          
+          // Create 4 cubes in a formation
+          const positions = [
+            { x: -2, z: -2 },
+            { x: 2, z: -2 },
+            { x: -2, z: 2 },
+            { x: 2, z: 2 }
+          ]
+          
+          positions.forEach((pos, index) => {
+            const cube = new Box({
+              width: 1.2,
+              height: 1.2,
+              depth: 1.2,
+              color: ['yellow', 'magenta', 'lime', 'pink'][index],
+              position: { x: pos.x, y: 0.6, z: pos.z }
+            })
+            cube.castShadow = true
+            this.group.add(cube)
+            this.colliders.push(cube)
+          })
+        }
+        
+        update() {
+          const time = Date.now() * 0.002
+          this.group.children.forEach((cube, index) => {
+            cube.rotation.x = time + index
+            cube.rotation.y = time * 1.5 + index
+            cube.position.y = 0.6 + Math.sin(time + index) * 0.3
+          })
+        }
+      }
+
+      // NEW: Obstacle 5: Bouncing Balls
+      class BouncingBalls {
+        constructor(position) {
+          this.group = new THREE.Group()
+          position.y = groundTopY + 1
+          this.group.position.copy(position)
+          scene.add(this.group)
+          
+          this.colliders = []
+          
+          // Create 2 bouncing balls
+          const colors = ['lightblue', 'lightgreen']
+          const offsets = [-1.5, 1.5]
+          
+          offsets.forEach((offset, index) => {
+            const ball = new Box({
+              width: 1,
+              height: 1,
+              depth: 1,
+              color: colors[index],
+              position: { x: offset, y: 0.5, z: 0 }
+            })
+            // Make it more spherical
+            ball.scale.set(1, 1, 1)
+            ball.castShadow = true
+            this.group.add(ball)
+            this.colliders.push(ball)
+          })
+        }
+        
+        update() {
+          const time = Date.now() * 0.0015
+          this.group.children.forEach((ball, index) => {
+            ball.position.y = 0.5 + Math.abs(Math.sin(time * 1.5 + index * 0.5)) * 2
+            ball.position.x = [-1.5, 1.5][index] + Math.cos(time + index * 2) * 2
+            ball.rotation.x += 0.1
+            ball.rotation.z += 0.05
+          })
+        }
+      }
+
+      // NEW: Obstacle 6: Sliding Platforms
+      class SlidingPlatforms {
+        constructor(position) {
+          this.group = new THREE.Group()
+          position.y = groundTopY + 0.3
+          this.group.position.copy(position)
+          scene.add(this.group)
+          
+          this.colliders = []
+          
+          // Create platforms that slide back and forth
+          const colors = ['brown', 'tan', 'saddlebrown']
+          const offsets = [-2.5, 0, 2.5]
+          
+          offsets.forEach((offset, index) => {
+            const platform = new Box({
+              width: 2,
+              height: 0.6,
+              depth: 1.5,
+              color: colors[index],
+              position: { x: offset, y: 0.3, z: 0 }
+            })
+            platform.castShadow = true
+            platform.receiveShadow = true
+            this.group.add(platform)
+            this.colliders.push(platform)
+          })
+        }
+        
+        update() {
+          const time = Date.now() * 0.0007
+          this.group.children.forEach((platform, index) => {
+            platform.position.x = [-2.5, 0, 2.5][index] + Math.sin(time + index * 0.8) * 4
+            platform.position.z = Math.cos(time * 1.3 + index) * 2
+          })
+        }
+      }
+
+      // NEW: Obstacle 7: Rotating Circles
+      class RotatingCircles {
+        constructor(position) {
+          this.group = new THREE.Group()
+          position.y = groundTopY + 0.4
+          this.group.position.copy(position)
+          scene.add(this.group)
+          
+          this.colliders = []
+          
+          // Create cylinder obstacles that rotate
+          for (let i = 0; i < 5; i++) {
+            const angle = (i / 5) * Math.PI * 2
+            const radius = 3.5
+            
+            const cylinder = new Box({
+              width: 0.8,
+              height: 2.5,
+              depth: 0.8,
+              color: ['coral', 'gold', 'silver', 'turquoise', 'violet'][i],
+              position: { 
+                x: Math.cos(angle) * radius, 
+                y: 1.25, 
+                z: Math.sin(angle) * radius 
+              }
+            })
+            cylinder.castShadow = true
+            this.group.add(cylinder)
+            this.colliders.push(cylinder)
+          }
+        }
+        
+        update() {
+          const time = Date.now() * 0.0005
+          this.group.children.forEach((cylinder, index) => {
+            const angle = (index / 5) * Math.PI * 2 + time
+            const radius = 3.5
+            
+            cylinder.position.x = Math.cos(angle) * radius
+            cylinder.position.z = Math.sin(angle) * radius
+            cylinder.rotation.y = angle
+          })
+        }
+      }
+
       function boxCollision({ box1, box2 }) {
         const box1WorldPos = new THREE.Vector3();
         box1.getWorldPosition(box1WorldPos);
@@ -285,19 +496,31 @@
       })
 
       const obstacles = []
-      const obstacleTypes = [SwingingBars, SlidingWall]
+      const obstacleTypes = [SwingingBars, SlidingWall, MovingPillars, SpinningCubes, BouncingBalls, SlidingPlatforms, RotatingCircles]
       let lastSpawnZ = -20
-      const spawnInterval = 25
+      const baseSpawnInterval = 25
 
       function spawnObstacle() {
-        const ObstacleClass = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)]
+        // Random obstacle type selection
+        const obstacleTypeIndex = Math.floor(Math.random() * obstacleTypes.length)
+        const ObstacleClass = obstacleTypes[obstacleTypeIndex]
+        
+        // Random spawn interval variation (18-35 units apart)
+        const spawnInterval = baseSpawnInterval + (Math.random() - 0.5) * 17
         const position = new THREE.Vector3(0, 0, lastSpawnZ - spawnInterval)
+        
+        // Add some horizontal randomness to X position
+        position.x = (Math.random() - 0.5) * 2
+        
         const newObstacle = new ObstacleClass(position)
         obstacles.push(newObstacle)
         lastSpawnZ -= spawnInterval
       }
 
-      for (let i=0; i < 5; i++) { spawnObstacle() }
+      // Spawn initial obstacles
+      for (let i = 0; i < 7; i++) { 
+        spawnObstacle() 
+      }
 
       let animationId
       function animate() {
@@ -317,9 +540,48 @@
           
           obstacle.colliders.forEach(collider => {
             if (boxCollision({ box1: player, box2: collider })) {
-              // MODIFIED: Show Game Over screen and stop the game
+              // ENHANCED: Game over with cleanup
               document.getElementById('gameOverScreen').style.display = 'block';
-              cancelAnimationFrame(animationId)
+              
+              // Add some visual feedback
+              player.material.color.setHex(0xff0000); // Turn player red
+              
+              // Stop the game completely
+              cancelAnimationFrame(animationId);
+
+              // Add restart functionality
+              if (!document.getElementById('restartButton')) {
+                const restartButton = document.createElement('button');
+                restartButton.id = 'restartButton';
+                restartButton.textContent = 'Press R to Restart';
+                restartButton.style.cssText = `
+                  position: absolute;
+                  top: 60%;
+                  left: 50%;
+                  transform: translate(-50%, -50%);
+                  padding: 10px 20px;
+                  font-size: 1.5rem;
+                  background: rgba(0, 150, 0, 0.8);
+                  color: white;
+                  border: none;
+                  border-radius: 5px;
+                  cursor: pointer;
+                `;
+                document.getElementById('gameOverScreen').appendChild(restartButton);
+                
+                const restartHandler = (event) => {
+                  if (event.code === 'KeyR') {
+                    location.reload();
+                  }
+                };
+                window.addEventListener('keydown', restartHandler);
+                
+                // Clean up listener when restarting
+                restartButton.onclick = () => {
+                  window.removeEventListener('keydown', restartHandler);
+                  location.reload();
+                };
+              }
             }
           })
         })
@@ -340,6 +602,43 @@
         });
       }
       animate()
+      
+      // Add on-screen instructions
+      const instructionsDiv = document.createElement('div');
+      instructionsDiv.innerHTML = `
+        <div style="position: fixed; top: 20px; left: 20px; color: white; font-family: Arial; z-index: 100;
+             background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 10px; border: 2px solid rgba(255, 255, 255, 0.3);">
+          <h2 style="margin: 0 0 15px 0; color: #00ffff; text-shadow: 0 0 10px #00ffff;">🎮 Block Runner Game</h2>
+          <p style="margin: 8px 0; color: #cccccc; font-size: 16px;">
+            <strong>🎯 Objective:</strong> Survive as long as possible without hitting obstacles!
+          </p>
+          <p style="margin: 8px 0; color: #ffeb3b;">
+            ▶ <strong>A</strong> - Move Left | <strong>D</strong> - Move Right
+          </p>
+          <p style="margin: 8px 0; color: #ffeb3b;">
+            ▶ <strong>SPACE</strong> - Jump over obstacles
+          </p>
+          <p style="margin: 8px 0; color: #4caf50;">
+            💡 Dodge 7 different obstacle types:
+          </p>
+          <p style="margin: 5px 0; color: #ffeb3b; font-size: 14px;">
+            • Swinging Bars • Sliding Walls • Moving Pillars • Spinning Cubes<br>
+            • Bouncing Balls • Sliding Platforms • Rotating Circles
+          </p>
+          <p style="margin: 15px 0 5px 0; color: #f44336;">
+            ⚠️ Hit any obstacle = GAME OVER!
+          </p>
+        </div>
+      `;
+      document.body.appendChild(instructionsDiv);
+      
+      // Auto-hide instructions after 10 seconds
+      setTimeout(() => {
+        instructionsDiv.style.opacity = '0.3';
+        instructionsDiv.onclick = () => {
+          instructionsDiv.style.display = 'none';
+        };
+      }, 10000);
     </script>
 </body>
 </html>
