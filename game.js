@@ -127,6 +127,7 @@ function createAsteroidModel() {
 
 // --- MAIN GAME LOGIC ---
 function initGame() {
+  let isFirstPerson = false; // default:third-person
   const gameState = { score: 0, currentLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null };
   const gameConfig = { playerSpeed: -0.12, spawnInterval: 25, levelColors: { 1: { bg: '#010103' }, 2: { bg: '#0c0a1f' }, 3: { bg: '#1d0b30' } } };
   const LEVEL_THRESHOLDS = { 2: 300, 3: 700};
@@ -276,11 +277,30 @@ function initGame() {
   window.addEventListener('keydown',e=>{switch(e.code){case'KeyA':keys.a.pressed=true;break;case'KeyD':keys.d.pressed=true;break;case'Space':if(player&&player.onGround)player.velocity.y=.12;break;case'KeyR':if(gameState.isGameOver)resetGame();break}});
   window.addEventListener('keyup',e=>{switch(e.code){case'KeyA':keys.a.pressed=false;break;case'KeyD':keys.d.pressed=false;break}});
   window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight)});
+  window.addEventListener('keydown', e => {
+    if(e.code === 'KeyV') isFirstPerson = !isFirstPerson;
+});
+
   
   function animate() {
     animationId = requestAnimationFrame(animate);
     player.update(grounds);
-    const cO=new THREE.Vector3(0,4,8);camera.position.copy(player.position).add(cO);camera.lookAt(player.position);
+    if (isFirstPerson) {
+        // Attach camera in front of player
+        const fpHeight = player.height * 1.4;
+        const forward = new THREE.Vector3(0, 0, -1); 
+        forward.applyQuaternion(player.quaternion);
+
+        camera.position.copy(player.position);
+        camera.position.y += fpHeight;
+        camera.lookAt(camera.position.clone().add(forward));
+    } else {
+        // Default third-person camera
+        const cO = new THREE.Vector3(0, 2, 8);
+        camera.position.copy(player.position).add(cO);
+        camera.lookAt(player.position);
+    }
+
     if(player.position.y<-10)triggerGameOver("You fell into deep space!");
     if (player.position.z < lastSpawnZ + 100) spawnObstacle();
     obstacles.forEach(o=>{o.update();o.colliders.forEach(c=>{if(boxCollision({box1:player.colliderBox,box2:c}))triggerGameOver("You crashed into an obstacle!")})});

@@ -22,6 +22,7 @@ Survive for as long as you can and achieve the highest score!
 | **A / D** | Move Left / Right |
 | **SPACE** | Jump |
 | **R** | Restart Game |
+| **V** | Switch View |
 
 ---
 
