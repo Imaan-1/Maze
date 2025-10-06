@@ -129,7 +129,7 @@ function createAsteroidModel() {
 function initGame() {
   const gameState = { score: 0, currentLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null };
   const gameConfig = { playerSpeed: -0.12, spawnInterval: 25, levelColors: { 1: { bg: '#010103' }, 2: { bg: '#0c0a1f' }, 3: { bg: '#1d0b30' } } };
-  const LEVEL_THRESHOLDS = { 2: 50, 3: 100};
+  const LEVEL_THRESHOLDS = { 2: 300, 3: 700};
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(gameConfig.levelColors[1].bg);
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
