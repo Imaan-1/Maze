@@ -3,13 +3,140 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Block Runner Game</title>
+    <title>Space Runner: Galactic Escape</title>
     <style>
-      body {
+      * {
         margin: 0;
-        background: #0c4a6e;
+        padding: 0;
+        box-sizing: border-box;
       }
-      /* NEW: Style for the Game Over screen */
+      
+      body {
+        background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #1a1a4a 100%);
+        font-family: 'Arial', sans-serif;
+        overflow: hidden;
+        height: 100vh;
+      }
+
+      /* Animated starfield background */
+      .starfield {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+      }
+
+      .star {
+        position: absolute;
+        background: white;
+        border-radius: 50%;
+        animation: twinkle 3s infinite;
+      }
+
+      @keyframes twinkle {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
+      }
+
+      @keyframes shootingStar {
+        0% { 
+          transform: translateX(0) translateY(0);
+          opacity: 1;
+        }
+        100% { 
+          transform: translateX(200px) translateY(200px);
+          opacity: 0;
+        }
+      }
+
+      /* Menu Screen */
+      #menuScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at center, rgba(25, 25, 112, 0.9), rgba(0, 0, 0, 0.95));
+      }
+
+      .menu-content {
+        text-align: center;
+        padding: 40px;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 20px;
+        border: 2px solid rgba(56, 189, 248, 0.5);
+        box-shadow: 0 0 50px rgba(56, 189, 248, 0.3);
+        backdrop-filter: blur(10px);
+      }
+
+      .game-title {
+        font-size: 4rem;
+        color: #38bdf8;
+        text-shadow: 0 0 20px #38bdf8, 0 0 40px #38bdf8;
+        margin-bottom: 20px;
+        animation: titleGlow 2s ease-in-out infinite alternate;
+      }
+
+      @keyframes titleGlow {
+        from { text-shadow: 0 0 20px #38bdf8, 0 0 40px #38bdf8; }
+        to { text-shadow: 0 0 30px #38bdf8, 0 0 60px #38bdf8, 0 0 80px #38bdf8; }
+      }
+
+      .game-subtitle {
+        font-size: 1.2rem;
+        color: #fbbf24;
+        margin-bottom: 40px;
+        text-shadow: 0 0 10px #fbbf24;
+      }
+
+      .start-button {
+        padding: 20px 60px;
+        font-size: 2rem;
+        background: linear-gradient(45deg, #1e40af, #3b82f6);
+        color: white;
+        border: none;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: bold;
+        box-shadow: 0 10px 30px rgba(30, 64, 175, 0.5);
+        margin-bottom: 30px;
+      }
+
+      .start-button:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(30, 64, 175, 0.7);
+        background: linear-gradient(45deg, #3b82f6, #60a5fa);
+      }
+
+      .game-info {
+        color: #e5e7eb;
+        font-size: 1rem;
+        line-height: 1.6;
+      }
+
+      /* Game Screen */
+      #gameScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 100;
+        display: none;
+      }
+
+      /* Game Over Screen */
       #gameOverScreen {
         position: absolute;
         top: 50%;
@@ -19,21 +146,62 @@
         font-family: Arial, sans-serif;
         font-size: 4rem;
         text-align: center;
-        background-color: rgba(0, 0, 0, 0.7);
-        padding: 20px;
+        background: radial-gradient(circle, rgba(220, 38, 38, 0.9), rgba(0, 0, 0, 0.9));
+        padding: 40px;
+        border-radius: 20px;
+        border: 2px solid rgba(248, 113, 113, 0.5);
+        box-shadow: 0 0 50px rgba(220, 38, 38, 0.5);
+        display: none;
+        backdrop-filter: blur(10px);
+      }
+
+      .restart-button {
+        padding: 15px 40px;
+        font-size: 1.5rem;
+        background: linear-gradient(45deg, #059669, #10b981);
+        color: white;
+        border: none;
         border-radius: 10px;
-        display: none; /* Hidden by default */
+        cursor: pointer;
+        margin-top: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .restart-button:hover {
+        transform: translateY(-3px);
+        background: linear-gradient(45deg, #10b981, #34d399);
       }
     </style>
 </head>
 <body>
-    <div id="gameOverScreen">
-      <div style="text-align: center;">
-        <h1 style="color: #ff4444; margin-bottom: 20px;">💥 GAME OVER 💥</h1>
-        <p style="font-size: 1.5rem; margin-bottom: 30px;">You hit an obstacle!</p>
-        <p style="font-size: 1rem; color: #cccccc;">Use A and D keys to dodge obstacles</p>
-        <p style="font-size: 1rem; color: #cccccc;">Press SPACE to jump over obstacles</p>
-        <p style="font-size: 1rem; color: #cccccc;">Try to survive as long as possible!</p>
+    <!-- Starfield Background -->
+    <div class="starfield" id="starfield"></div>
+
+    <!-- Menu Screen -->
+    <div id="menuScreen">
+      <div class="menu-content">
+        <h1 class="game-title">🚀 SPACE RUNNER</h1>
+        <p class="game-subtitle">⭐ GALACTIC ESCAPE ⭐</p>
+        <button class="start-button" onclick="startGame()">
+          🎮 START MISSION
+        </button>
+        <div class="game-info">
+          <p><strong>👨‍🚀 Mission:</strong> Navigate through space obstacles!</p>
+          <p><strong>🎯 Controls:</strong> A/D to move • SPACE to jump</p>
+          <p><strong>⚠️ Danger:</strong> Avoid asteroids, aliens, and energy fields!</p>
+          <p><strong>🌟 Survive:</strong> Get the highest score!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen">
+      <div id="gameOverScreen">
+        <div style="text-align: center;">
+          <h1 style="color: #ff6b6b; margin-bottom: 20px;">💥 MISSION FAILED 💥</h1>
+          <p style="font-size: 1.5rem; margin-bottom: 30px;">You crashed into a space obstacle!</p>
+          <p style="font-size: 1rem; color: #e2e8f0;">Better luck next time, Space Cadet!</p>
+        </div>
       </div>
     </div>
 
@@ -50,595 +218,719 @@
     <script type="module">
       import * as THREE from 'three'
 
-      const scene = new THREE.Scene()
-      const camera = new THREE.PerspectiveCamera(
-        75,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
-      )
-
-      const renderer = new THREE.WebGLRenderer({
-        alpha: true,
-        antialias: true
-      })
-      renderer.shadowMap.enabled = true
-      renderer.setSize(window.innerWidth, window.innerHeight)
-      document.body.appendChild(renderer.domElement)
-
-      // The original Box class, our blueprint for all cubes
-      class Box extends THREE.Mesh {
-        constructor({
-          width,
-          height,
-          depth,
-          color = '#00ff00',
-          velocity = { x: 0, y: 0, z: 0 },
-          position = { x: 0, y: 0, z: 0 }
-        }) {
-          super(
-            new THREE.BoxGeometry(width, height, depth),
-            new THREE.MeshStandardMaterial({ color })
-          )
-          this.width = width
-          this.height = height
-          this.depth = depth
-
-          this.position.set(position.x, position.y, position.z)
-
-          this.velocity = velocity
-          this.gravity = -0.004
-
-          this.updateSides()
-        }
-
-        updateSides() {
-          this.right = this.position.x + this.width / 2
-          this.left = this.position.x - this.width / 2
-          this.bottom = this.position.y - this.height / 2
-          this.top = this.position.y + this.height / 2
-          this.front = this.position.z + this.depth / 2
-          this.back = this.position.z - this.depth / 2
-        }
-
-        update(grounds) { // MODIFIED: Accepts an array of grounds
-          this.updateSides()
-          this.position.x += this.velocity.x
-          this.position.z += this.velocity.z
-          this.applyGravity(grounds)
-        }
-
-        applyGravity(grounds) { // MODIFIED: Checks collision against all ground segments
-          this.velocity.y += this.gravity
+      // Create enhanced starfield background
+      function createStarfield() {
+        const starfield = document.getElementById('starfield');
+        
+        // Create multiple layers of stars for depth
+        for (let layer = 0; layer < 3; layer++) {
+          const starCount = layer === 0 ? 200 : layer === 1 ? 150 : 100;
+          const starSize = layer === 0 ? 1 : layer === 1 ? 2 : 3;
+          const animationSpeed = layer === 0 ? 3 : layer === 1 ? 4 : 5;
           
-          let isOnGround = false;
-          for (const ground of grounds) {
-            if (boxCollision({ box1: this, box2: ground })) {
-              isOnGround = true;
-              break;
-            }
-          }
-
-          if (isOnGround) {
-            const friction = 0.5
-            this.velocity.y *= friction
-            this.velocity.y = -this.velocity.y
-          } else {
-            this.position.y += this.velocity.y
+          for (let i = 0; i < starCount; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.width = Math.random() * starSize + 1 + 'px';
+            star.style.height = star.style.width;
+            star.style.animationDelay = Math.random() * animationSpeed + 's';
+            star.style.animationDuration = animationSpeed + 's';
+            
+            // Add different colors for variety
+            const colors = ['white', '#87CEEB', '#FFB6C1', '#F0E68C', '#DDA0DD'];
+            star.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            starfield.appendChild(star);
           }
         }
-      }
-
-      const groundTopY = -1.75; // The Y-level of the ground surface
-
-      // Obstacle 1: Swinging Bars
-      class SwingingBars {
-        constructor(position) {
-          this.group = new THREE.Group()
-          // MODIFIED: Y position is now aligned with the ground
-          position.y = groundTopY + 0.25;
-          this.group.position.copy(position)
-          scene.add(this.group)
-
-          const barGeometry = new THREE.BoxGeometry(0.3, 0.5, 4)
-          const barMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 })
-
-          this.bar1 = new THREE.Mesh(barGeometry, barMaterial)
-          this.bar1.position.z = -2
-          this.bar1.castShadow = true
-
-          this.bar2 = new THREE.Mesh(barGeometry, barMaterial)
-          this.bar2.position.z = 2
-          this.bar2.castShadow = true
-
-          this.pivot1 = new THREE.Object3D()
-          this.pivot1.position.x = -2.5
-          this.pivot1.add(this.bar1)
-          
-          this.pivot2 = new THREE.Object3D()
-          this.pivot2.position.x = 2.5
-          this.pivot2.add(this.bar2)
-
-          this.group.add(this.pivot1)
-          this.group.add(this.pivot2)
-          
-          this.colliders = [this.bar1, this.bar2]
-        }
-
-        update() {
-          const time = Date.now() * 0.001
-          this.pivot1.rotation.y = Math.sin(time) * 1.5 
-          this.pivot2.rotation.y = -Math.sin(time) * 1.5
-        }
+        
+        // Add shooting stars occasionally
+        setInterval(() => {
+          if (Math.random() < 0.3) {
+            createShootingStar();
+          }
+        }, 2000);
       }
       
-      // Obstacle 2: Sliding Wall
-      class SlidingWall {
-        constructor(position) {
-          const wallHeight = 2;
-          // MODIFIED: Y position is calculated to sit on the ground
-          position.y = groundTopY + wallHeight / 2;
-          
-          this.mesh = new Box({
-            width: 2.5,
-            height: wallHeight,
-            depth: 0.5,
-            color: 'orange',
-            position
-          })
-          this.mesh.castShadow = true
-          scene.add(this.mesh)
-          
-          this.colliders = [this.mesh]
-        }
+      function createShootingStar() {
+        const starfield = document.getElementById('starfield');
+        const shootingStar = document.createElement('div');
+        shootingStar.style.position = 'absolute';
+        shootingStar.style.width = '2px';
+        shootingStar.style.height = '2px';
+        shootingStar.style.background = 'linear-gradient(45deg, white, transparent)';
+        shootingStar.style.left = Math.random() * 100 + '%';
+        shootingStar.style.top = Math.random() * 50 + '%';
+        shootingStar.style.animation = 'shootingStar 1s linear forwards';
         
-        update() {
-          const time = Date.now() * 0.0008
-          this.mesh.position.x = Math.sin(time) * 3.75 
-          this.mesh.updateSides()
-        }
+        starfield.appendChild(shootingStar);
+        
+        setTimeout(() => {
+          starfield.removeChild(shootingStar);
+        }, 1000);
       }
 
-      // NEW: Obstacle 3: Moving Pillars
-      class MovingPillars {
-        constructor(position) {
-          this.group = new THREE.Group()
-          position.y = groundTopY + 1
-          this.group.position.copy(position)
-          scene.add(this.group)
-          
-          this.colliders = []
-          
-          // Create 3 pillars that move independently
-          const colors = ['red', 'purple', 'cyan']
-          const offsets = [-3, 0, 3]
-          
-          offsets.forEach((offset, index) => {
-            const pillar = new Box({
-              width: 0.8,
-              height: 3,
-              depth: 0.8,
-              color: colors[index],
-              position: { x: offset, y: 1.5, z: 0 }
-            })
-            pillar.castShadow = true
-            this.group.add(pillar)
-            this.colliders.push(pillar)
-          })
-        }
-        
-        update() {
-          const time = Date.now() * 0.001
-          this.group.children.forEach((pillar, index) => {
-            pillar.position.x = [-3, 0, 3][index] + Math.sin(time + index) * 2
-            pillar.position.z = Math.cos(time * 1.2 + index) * 1.5
-          })
-        }
+      // Game menu functionality
+      function startGame() {
+        document.getElementById('menuScreen').style.display = 'none';
+        document.getElementById('gameScreen').style.display = 'block';
+        initGame();
       }
 
-      // NEW: Obstacle 4: Spinning Cubes
-      class SpinningCubes {
-        constructor(position) {
-          this.group = new THREE.Group()
-          position.y = groundTopY + 0.5
-          this.group.position.copy(position)
-          scene.add(this.group)
-          
-          this.colliders = []
-          
-          // Create 4 cubes in a formation
-          const positions = [
-            { x: -2, z: -2 },
-            { x: 2, z: -2 },
-            { x: -2, z: 2 },
-            { x: 2, z: 2 }
-          ]
-          
-          positions.forEach((pos, index) => {
-            const cube = new Box({
-              width: 1.2,
-              height: 1.2,
-              depth: 1.2,
-              color: ['yellow', 'magenta', 'lime', 'pink'][index],
-              position: { x: pos.x, y: 0.6, z: pos.z }
-            })
-            cube.castShadow = true
-            this.group.add(cube)
-            this.colliders.push(cube)
-          })
-        }
-        
-        update() {
-          const time = Date.now() * 0.002
-          this.group.children.forEach((cube, index) => {
-            cube.rotation.x = time + index
-            cube.rotation.y = time * 1.5 + index
-            cube.position.y = 0.6 + Math.sin(time + index) * 0.3
-          })
-        }
-      }
+      function initGame() {
+        const scene = new THREE.Scene()
+        scene.background = new THREE.Color('#0B1426')
+        scene.fog = new THREE.Fog('#0B1426', 50, 100)
 
-      // NEW: Obstacle 5: Bouncing Balls
-      class BouncingBalls {
-        constructor(position) {
-          this.group = new THREE.Group()
-          position.y = groundTopY + 1
-          this.group.position.copy(position)
-          scene.add(this.group)
-          
-          this.colliders = []
-          
-          // Create 2 bouncing balls
-          const colors = ['lightblue', 'lightgreen']
-          const offsets = [-1.5, 1.5]
-          
-          offsets.forEach((offset, index) => {
-            const ball = new Box({
-              width: 1,
-              height: 1,
-              depth: 1,
-              color: colors[index],
-              position: { x: offset, y: 0.5, z: 0 }
-            })
-            // Make it more spherical
-            ball.scale.set(1, 1, 1)
-            ball.castShadow = true
-            this.group.add(ball)
-            this.colliders.push(ball)
-          })
-        }
-        
-        update() {
-          const time = Date.now() * 0.0015
-          this.group.children.forEach((ball, index) => {
-            ball.position.y = 0.5 + Math.abs(Math.sin(time * 1.5 + index * 0.5)) * 2
-            ball.position.x = [-1.5, 1.5][index] + Math.cos(time + index * 2) * 2
-            ball.rotation.x += 0.1
-            ball.rotation.z += 0.05
-          })
-        }
-      }
+        const camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        )
 
-      // NEW: Obstacle 6: Sliding Platforms
-      class SlidingPlatforms {
-        constructor(position) {
-          this.group = new THREE.Group()
-          position.y = groundTopY + 0.3
-          this.group.position.copy(position)
-          scene.add(this.group)
-          
-          this.colliders = []
-          
-          // Create platforms that slide back and forth
-          const colors = ['brown', 'tan', 'saddlebrown']
-          const offsets = [-2.5, 0, 2.5]
-          
-          offsets.forEach((offset, index) => {
-            const platform = new Box({
-              width: 2,
-              height: 0.6,
-              depth: 1.5,
-              color: colors[index],
-              position: { x: offset, y: 0.3, z: 0 }
-            })
-            platform.castShadow = true
-            platform.receiveShadow = true
-            this.group.add(platform)
-            this.colliders.push(platform)
-          })
-        }
-        
-        update() {
-          const time = Date.now() * 0.0007
-          this.group.children.forEach((platform, index) => {
-            platform.position.x = [-2.5, 0, 2.5][index] + Math.sin(time + index * 0.8) * 4
-            platform.position.z = Math.cos(time * 1.3 + index) * 2
-          })
-        }
-      }
-
-      // NEW: Obstacle 7: Rotating Circles
-      class RotatingCircles {
-        constructor(position) {
-          this.group = new THREE.Group()
-          position.y = groundTopY + 0.4
-          this.group.position.copy(position)
-          scene.add(this.group)
-          
-          this.colliders = []
-          
-          // Create cylinder obstacles that rotate
-          for (let i = 0; i < 5; i++) {
-            const angle = (i / 5) * Math.PI * 2
-            const radius = 3.5
-            
-            const cylinder = new Box({
-              width: 0.8,
-              height: 2.5,
-              depth: 0.8,
-              color: ['coral', 'gold', 'silver', 'turquoise', 'violet'][i],
-              position: { 
-                x: Math.cos(angle) * radius, 
-                y: 1.25, 
-                z: Math.sin(angle) * radius 
-              }
-            })
-            cylinder.castShadow = true
-            this.group.add(cylinder)
-            this.colliders.push(cylinder)
-          }
-        }
-        
-        update() {
-          const time = Date.now() * 0.0005
-          this.group.children.forEach((cylinder, index) => {
-            const angle = (index / 5) * Math.PI * 2 + time
-            const radius = 3.5
-            
-            cylinder.position.x = Math.cos(angle) * radius
-            cylinder.position.z = Math.sin(angle) * radius
-            cylinder.rotation.y = angle
-          })
-        }
-      }
-
-      function boxCollision({ box1, box2 }) {
-        const box1WorldPos = new THREE.Vector3();
-        box1.getWorldPosition(box1WorldPos);
-        
-        const box2WorldPos = new THREE.Vector3();
-        box2.getWorldPosition(box2WorldPos);
-
-        const box1Sides = {
-            left: box1WorldPos.x - box1.geometry.parameters.width / 2,
-            right: box1WorldPos.x + box1.geometry.parameters.width / 2,
-            bottom: box1WorldPos.y - box1.geometry.parameters.height / 2,
-            top: box1WorldPos.y + box1.geometry.parameters.height / 2,
-            back: box1WorldPos.z - box1.geometry.parameters.depth / 2,
-            front: box1WorldPos.z + box1.geometry.parameters.depth / 2
-        };
-
-        const box2Sides = {
-            left: box2WorldPos.x - box2.geometry.parameters.width / 2,
-            right: box2WorldPos.x + box2.geometry.parameters.width / 2,
-            bottom: box2WorldPos.y - box2.geometry.parameters.height / 2,
-            top: box2WorldPos.y + box2.geometry.parameters.height / 2,
-            back: box2WorldPos.z - box2.geometry.parameters.depth / 2,
-            front: box2WorldPos.z + box2.geometry.parameters.depth / 2
-        };
-
-        return (
-            box1Sides.right >= box2Sides.left &&
-            box1Sides.left <= box2Sides.right &&
-            box1Sides.top >= box2Sides.bottom &&
-            box1Sides.bottom <= box2Sides.top &&
-            box1Sides.front >= box2Sides.back &&
-            box1Sides.back <= box2Sides.front
-        );
-      }
-      
-      const player = new Box({
-        width: 1, height: 1, depth: 1,
-        velocity: { x: 0, y: -0.01, z: 0 }
-      })
-      player.castShadow = true
-      scene.add(player)
-
-      // --- NEW: Infinite Ground Setup ---
-      const grounds = []
-      const groundWidth = 10
-      const groundDepth = 200
-      for (let i = 0; i < 2; i++) {
-        const ground = new Box({
-            width: groundWidth, height: 0.5, depth: groundDepth,
-            color: '#0369a1',
-            position: { x: 0, y: -2, z: -i * groundDepth }
-        });
-        ground.receiveShadow = true;
-        scene.add(ground);
-        grounds.push(ground);
-      }
-      // --- End of Infinite Ground Setup ---
-
-      const light = new THREE.DirectionalLight(0xffffff, 1)
-      light.position.y = 3
-      light.position.z = 1
-      light.castShadow = true
-      scene.add(light)
-      scene.add(new THREE.AmbientLight(0xffffff, 0.5))
-
-      const keys = { a: { pressed: false }, d: { pressed: false } }
-
-      window.addEventListener('keydown', (event) => {
-        switch (event.code) {
-          case 'KeyA': keys.a.pressed = true; break
-          case 'KeyD': keys.d.pressed = true; break
-          case 'Space': 
-            let onAnyGround = false;
-            for(const ground of grounds){
-                if(player.position.y <= ground.top + 0.1){
-                    onAnyGround = true;
-                    break;
-                }
-            }
-            if (onAnyGround) {
-                player.velocity.y = 0.12
-            }
-            break
-        }
-      })
-
-      window.addEventListener('keyup', (event) => {
-        switch (event.code) {
-          case 'KeyA': keys.a.pressed = false; break
-          case 'KeyD': keys.d.pressed = false; break
-        }
-      })
-
-      const obstacles = []
-      const obstacleTypes = [SwingingBars, SlidingWall, MovingPillars, SpinningCubes, BouncingBalls, SlidingPlatforms, RotatingCircles]
-      let lastSpawnZ = -20
-      const baseSpawnInterval = 25
-
-      function spawnObstacle() {
-        // Random obstacle type selection
-        const obstacleTypeIndex = Math.floor(Math.random() * obstacleTypes.length)
-        const ObstacleClass = obstacleTypes[obstacleTypeIndex]
-        
-        // Random spawn interval variation (18-35 units apart)
-        const spawnInterval = baseSpawnInterval + (Math.random() - 0.5) * 17
-        const position = new THREE.Vector3(0, 0, lastSpawnZ - spawnInterval)
-        
-        // Add some horizontal randomness to X position
-        position.x = (Math.random() - 0.5) * 2
-        
-        const newObstacle = new ObstacleClass(position)
-        obstacles.push(newObstacle)
-        lastSpawnZ -= spawnInterval
-      }
-
-      // Spawn initial obstacles
-      for (let i = 0; i < 7; i++) { 
-        spawnObstacle() 
-      }
-
-      let animationId
-      function animate() {
-        animationId = requestAnimationFrame(animate)
-        renderer.render(scene, camera)
-
-        player.velocity.x = 0
-        player.velocity.z = -0.1
-
-        if (keys.a.pressed) player.velocity.x = -0.05
-        else if (keys.d.pressed) player.velocity.x = 0.05
-
-        player.update(grounds) // MODIFIED: Pass grounds array to player update
-        
-        obstacles.forEach((obstacle) => {
-          obstacle.update()
-          
-          obstacle.colliders.forEach(collider => {
-            if (boxCollision({ box1: player, box2: collider })) {
-              // ENHANCED: Game over with cleanup
-              document.getElementById('gameOverScreen').style.display = 'block';
-              
-              // Add some visual feedback
-              player.material.color.setHex(0xff0000); // Turn player red
-              
-              // Stop the game completely
-              cancelAnimationFrame(animationId);
-
-              // Add restart functionality
-              if (!document.getElementById('restartButton')) {
-                const restartButton = document.createElement('button');
-                restartButton.id = 'restartButton';
-                restartButton.textContent = 'Press R to Restart';
-                restartButton.style.cssText = `
-                  position: absolute;
-                  top: 60%;
-                  left: 50%;
-                  transform: translate(-50%, -50%);
-                  padding: 10px 20px;
-                  font-size: 1.5rem;
-                  background: rgba(0, 150, 0, 0.8);
-                  color: white;
-                  border: none;
-                  border-radius: 5px;
-                  cursor: pointer;
-                `;
-                document.getElementById('gameOverScreen').appendChild(restartButton);
-                
-                const restartHandler = (event) => {
-                  if (event.code === 'KeyR') {
-                    location.reload();
-                  }
-                };
-                window.addEventListener('keydown', restartHandler);
-                
-                // Clean up listener when restarting
-                restartButton.onclick = () => {
-                  window.removeEventListener('keydown', restartHandler);
-                  location.reload();
-                };
-              }
-            }
-          })
+        const renderer = new THREE.WebGLRenderer({
+          alpha: true,
+          antialias: true
         })
+        renderer.shadowMap.enabled = true
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap
+        renderer.setSize(window.innerWidth, window.innerHeight)
+        renderer.setClearColor('#0B1426')
         
-        const cameraOffset = new THREE.Vector3(0, 4, 8)
-        camera.position.copy(player.position).add(cameraOffset)
-        camera.lookAt(player.position)
+        // Add renderer to game screen
+        const gameScreen = document.getElementById('gameScreen')
+        gameScreen.appendChild(renderer.domElement)
 
-        if (player.position.z < lastSpawnZ + 100) { spawnObstacle() }
+        // Create sparkle particles for space atmosphere
+        function createSpaceParticles() {
+          const particleCount = 200
+          const particles = new THREE.BufferGeometry()
+          const positions = new Float32Array(particleCount * 3)
+          
+          for (let i = 0; i < particleCount * 3; i += 3) {
+            positions[i] = (Math.random() - 0.5) * 100
+            positions[i + 1] = Math.random() * 20 + 10
+            positions[i + 2] = (Math.random() - 0.5) * 100
+          }
+          
+          particles.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+          
+          const particleMaterial = new THREE.PointsMaterial({
+            color: 0x87CEEB,
+            size: 0.05,
+            transparent: true,
+            opacity: 0.8
+          })
+          
+          return new THREE.Points(particles, particleMaterial)
+        }
 
-        // --- NEW: Ground Recycling Logic ---
-        grounds.forEach(ground => {
-            // Check if a ground segment is fully behind the camera
-            if (camera.position.z < ground.position.z - ground.depth / 2) {
-                // Move it ahead by the total length of all ground segments
-                ground.position.z -= grounds.length * ground.depth;
+        // Modified Box class for space theme
+        class SpaceShip extends THREE.Mesh {
+          constructor({
+            width,
+            height,
+            depth,
+            color = '#4facfe',
+            velocity = { x: 0, y: 0, z: 0 },
+            position = { x: 0, y: 0, z: 0 }
+          }) {
+            super(
+              new THREE.BoxGeometry(width, height, depth),
+              new THREE.MeshStandardMaterial({ 
+                color,
+               emissive: color,
+               emissiveIntensity: 0.2
+              })
+            )
+            this.width = width
+            this.height = height
+            this.depth = depth
+
+            this.position.set(position.x, position.y, position.z)
+
+            this.velocity = velocity
+            this.gravity = -0.004
+
+            this.updateSides()
+          }
+
+          updateSides() {
+            this.right = this.position.x + this.width / 2
+            this.left = this.position.x - this.width / 2
+            this.bottom = this.position.y - this.height / 2
+            this.top = this.position.y + this.height / 2
+            this.front = this.position.z + this.depth / 2
+            this.back = this.position.z - this.depth / 2
+          }
+
+          update(grounds) {
+            this.updateSides()
+            this.position.x += this.velocity.x
+            this.position.z += this.velocity.z
+            this.applyGravity(grounds)
+          }
+
+          applyGravity(grounds) {
+            this.velocity.y += this.gravity
+            
+            let isOnGround = false;
+            for (const ground of grounds) {
+              if (boxCollision({ box1: this, box2: ground })) {
+                isOnGround = true;
+                break;
+              }
             }
-        });
+
+            if (isOnGround) {
+              const friction = 0.5
+              this.velocity.y *= friction
+              this.velocity.y = -this.velocity.y
+            } else {
+              this.position.y += this.velocity.y
+            }
+          }
+        }
+
+        const groundTopY = -1.75;
+
+        // SPACE OBSTACLES
+
+        // Asteroid Field
+        class AsteroidField {
+          constructor(position) {
+            this.group = new THREE.Group()
+            position.y = groundTopY
+            this.group.position.copy(position)
+            scene.add(this.group)
+            
+            this.colliders = []
+            
+            // Create multiple asteroid shapes
+            for (let i = 0; i < 4; i++) {
+              const asteroid = new SpaceShip({
+                width: Math.random() * 1 + 0.8,
+                height: Math.random() * 1 + 0.8,
+                depth: Math.random() * 1 + 0.8,
+                color: ['#8B4513', '#CD853F', '#D2691E', '#A0522D'][i],
+                position: { 
+                  x: (i - 2) * 2, 
+                  y: 0.4, 
+                  z: 0 
+                }
+              })
+              
+              // Make asteroids irregular
+              asteroid.scale.set(
+                Math.random() * 0.3 + 0.7,
+                Math.random() * 0.3 + 0.7,
+                Math.random() * 0.3 + 0.7
+              )
+              
+              asteroid.castShadow = true
+              asteroid.material.emissiveIntensity = 0
+              this.group.add(asteroid)
+              this.colliders.push(asteroid)
+            }
+          }
+          
+          update() {
+            const time = Date.now() * 0.001
+            this.group.children.forEach((asteroid, index) => {
+              asteroid.position.x = (index - 2) * 2 + Math.sin(time + index) * 2.5
+              asteroid.position.y = 0.4 // Keep asteroids on ground level
+              asteroid.rotation.x += 0.01
+              asteroid.rotation.y += 0.015
+              asteroid.rotation.z += 0.008
+            })
+          }
+        }
+
+        // Alien UFO
+        class UFO {
+          constructor(position) {
+            this.group = new THREE.Group()
+            position.y = groundTopY
+            this.group.position.copy(position)
+            scene.add(this.group)
+            
+            this.colliders = []
+            
+            // UFO main body
+            const ufoBody = new SpaceShip({
+              width: 3,
+              height: 1,
+              depth: 3,
+              color: '#FFD700',
+              position: { x: 0, y: 0.5, z: 0 }
+            })
+            
+            // UFO dome
+            const ufoDome = new SpaceShip({
+              width: 2,
+              height: 1.5,
+              depth: 2,
+              color: '#FF6B6B',
+              position: { x: 0, y: 1.25, z: 0 }
+            })
+            
+            ufoBody.castShadow = true
+            ufoDome.castShadow = true
+            
+            this.group.add(ufoBody)
+            this.group.add(ufoDome)
+            this.colliders.push(ufoBody, ufoDome)
+          }
+          
+          update() {
+            const time = Date.now() * 0.0008
+            this.group.position.x = Math.sin(time) * 4
+            this.group.children.forEach(child => {
+              child.rotation.y = time * 0.5
+            })
+          }
+        }
+
+        // Energy Field
+        class EnergyField {
+          constructor(position) {
+            this.group = new THREE.Group()
+            position.y = groundTopY
+            this.group.position.copy(position)
+            scene.add(this.group)
+            
+            this.colliders = []
+            
+            // Create energy barriers
+            const colors = ['#00FFFF', '#FF00FF', '#00FF00']
+            const positions = [
+              { x: -2.5, z: 0 },
+              { x: 0, z: 2.5 },
+              { x: 2.5, z: 0 },
+              { x: 0, z: -2.5 }
+            ]
+            
+            positions.forEach((pos, index) => {
+              const barrier = new SpaceShip({
+                width: 0.3,
+                height: 3,
+                depth: 0.3,
+                color: colors[index % 3],
+                position: { x: pos.x, y: 1.5, z: pos.z }
+              })
+              
+              barrier.material.emissive.setHex(barrier.material.color.getHex())
+              barrier.material.emissiveIntensity = 0.3
+              barrier.castShadow = true
+              
+              this.group.add(barrier)
+              this.colliders.push(barrier)
+            })
+          }
+          
+          update() {
+            const time = Date.now() * 0.002
+            this.group.children.forEach((barrier, index) => {
+              barrier.position.y = 1.5 // Keep barriers at fixed height
+              barrier.material.emissiveIntensity = 0.3 + Math.sin(time * 2) * 0.2
+            })
+          }
+        }
+
+        // Plasma Shots
+        class PlasmaShots {
+          constructor(position) {
+            this.group = new THREE.Group()
+            position.y = groundTopY
+            this.group.position.copy(position)
+            scene.add(this.group)
+            
+            this.colliders = []
+            
+            // Create plasma orbs
+            for (let i = 0; i < 3; i++) {
+              const plasma = new SpaceShip({
+                width: 0.6,
+                height: 0.6,
+                depth: 0.6,
+                color: '#FF4500',
+                position: { x: i * 2 - 2, y: 0.3, z: 0 }
+              })
+              
+              plasma.material.emissive.setHex(plasma.material.color.getHex())
+              plasma.material.emissiveIntensity = 0.4
+              plasma.castShadow = true
+              
+              this.group.add(plasma)
+              this.colliders.push(plasma)
+            }
+          }
+          
+          update() {
+            const time = Date.now() * 0.0015
+            this.group.children.forEach((plasma, index) => {
+              const baseX = index * 2 - 2
+              plasma.position.x = baseX + Math.sin(time + index) * 3
+              plasma.position.y = 0.3 // Keep plasma orbs on ground level
+              plasma.position.z = Math.sin(time * 0.8 + index) * 2
+              
+              plasma.rotation.x += 0.05
+              plasma.rotation.z += 0.03
+            })
+          }
+        }
+
+        // Nebula Cloud
+        class NebulaCloud {
+          constructor(position) {
+            this.group = new THREE.Group()
+            position.y = groundTopY
+            this.group.position.copy(position)
+            scene.add(this.group)
+            
+            this.colliders = []
+            
+            // Create cloud formations
+            const colors = ['#9370DB', '#FF69B4', '#20B2AA']
+            for (let i = 0; i < 5; i++) {
+              const cloud = new SpaceShip({
+                width: Math.random() * 2 + 1,
+                height: Math.random() * 1 + 0.5,
+                depth: Math.random() * 2 + 1,
+                color: colors[i % 3],
+                position: { 
+                  x: (i - 2) * 2.5, 
+                  y: 0.75, 
+                  z: (i % 2 === 0) ? -1 : 1 
+                }
+              })
+              
+              cloud.material.transparent = true
+              cloud.material.opacity = 0.7
+              cloud.castShadow = true
+              
+              this.group.add(cloud)
+              this.colliders.push(cloud)
+            }
+          }
+          
+          update() {
+            const time = Date.now() * 0.0007
+            this.group.children.forEach((cloud, index) => {
+              const baseX = (index - 2) * 2.5
+              cloud.position.x = baseX + Math.cos(time + index) * 2
+              cloud.position.y = 0.75 // Keep clouds on ground level
+              cloud.position.z = (index % 2 === 0) ? -1 : 1 + Math.sin(time * 0.3 + index) * 1.5
+              
+              cloud.scale.y = 1 + Math.sin(time * 2 + index) * 0.2
+            })
+          }
+        }
+
+        // Space Debris
+        class SpaceDebris {
+          constructor(position) {
+            this.group = new THREE.Group()
+            position.y = groundTopY
+            this.group.position.copy(position)
+            scene.add(this.group)
+            
+            this.colliders = []
+            
+            // Create floating debris
+            for (let i = 0; i < 6; i++) {
+              const debris = new SpaceShip({
+                width: Math.random() * 0.8 + 0.4,
+                height: Math.random() * 0.8 + 0.4,
+                depth: Math.random() * 0.8 + 0.4,
+                color: '#708090',
+                position: { 
+                  x: (i % 3 - 1) * 4, 
+                  y: 0.2, 
+                  z: Math.floor(i / 3) * 3 - 1.5 
+                }
+              })
+              
+              debris.castShadow = true
+              this.group.add(debris)
+              this.colliders.push(debris)
+            }
+          }
+          
+          update() {
+            const time = Date.now() * 0.0012
+            this.group.children.forEach((debris, index) => {
+              const baseX = (index % 3 - 1) * 4
+              const baseZ = Math.floor(index / 3) * 3 - 1.5
+              
+              debris.position.x = baseX + Math.sin(time + index) * 1.5
+              debris.position.y = 0.2 // Keep debris on ground level
+              debris.position.z = baseZ + Math.sin(time * 0.6 + index) * 1
+              
+              debris.rotation.x += 0.02
+              debris.rotation.y += 0.015
+              debris.rotation.z += 0.008
+            })
+          }
+        }
+
+        // Quantum Gate
+        class QuantumGate {
+          constructor(position) {
+            this.group = new THREE.Group()
+            position.y = groundTopY
+            this.group.position.copy(position)
+            scene.add(this.group)
+            
+            this.colliders = []
+            
+            // Create gate structure
+            for (let i = 0; i < 8; i++) {
+              const angle = (i / 8) * Math.PI * 2
+              const radius = 3
+              
+              const gatePart = new SpaceShip({
+                width: 0.4,
+                height: 4,
+                depth: 0.4,
+                color: '#00FF7F',
+                position: { 
+                  x: Math.cos(angle) * radius, 
+                  y: 2, 
+                  z: Math.sin(angle) * radius 
+                }
+              })
+              
+              gatePart.material.emissive.setHex(gatePart.material.color.getHex())
+              gatePart.material.emissiveIntensity = 0.3
+              gatePart.castShadow = true
+              
+              this.group.add(gatePart)
+              this.colliders.push(gatePart)
+            }
+          }
+          
+          update() {
+            const time = Date.now() * 0.0005
+            this.group.children.forEach((gatePart, index) => {
+              const angle = (index / 8) * Math.PI * 2 + time
+              const radius = 3
+              
+              gatePart.position.x = Math.cos(angle) * radius
+              gatePart.position.z = Math.sin(angle) * radius
+              
+              gatePart.material.emissiveIntensity = 0.3 + Math.sin(time * 3) * 0.2
+            })
+          }
+        }
+
+        function boxCollision({ box1, box2 }) {
+          const box1WorldPos = new THREE.Vector3();
+          box1.getWorldPosition(box1WorldPos);
+          
+          const box2WorldPos = new THREE.Vector3();
+          box2.getWorldPosition(box2WorldPos);
+
+          const box1Sides = {
+              left: box1WorldPos.x - box1.geometry.parameters.width / 2,
+              right: box1WorldPos.x + box1.geometry.parameters.width / 2,
+              bottom: box1WorldPos.y - box1.geometry.parameters.height / 2,
+              top: box1WorldPos.y + box1.geometry.parameters.height / 2,
+              back: box1WorldPos.z - box1.geometry.parameters.depth / 2,
+              front: box1WorldPos.z + box1.geometry.parameters.depth / 2
+          };
+
+          const box2Sides = {
+              left: box2WorldPos.x - box2.geometry.parameters.width / 2,
+              right: box2WorldPos.x + box2.geometry.parameters.width / 2,
+              bottom: box2WorldPos.y - box2.geometry.parameters.height / 2,
+              top: box2WorldPos.y + box2.geometry.parameters.height / 2,
+              back: box2WorldPos.z - box2.geometry.parameters.depth / 2,
+              front: box2WorldPos.z + box2.geometry.parameters.depth / 2
+          };
+
+          return (
+              box1Sides.right >= box2Sides.left &&
+              box1Sides.left <= box2Sides.right &&
+              box1Sides.top >= box2Sides.bottom &&
+              box1Sides.bottom <= box2Sides.top &&
+              box1Sides.front >= box2Sides.back &&
+              box1Sides.back <= box2Sides.front
+          );
+        }
+        
+        const player = new SpaceShip({
+          width: 1, height: 1, depth: 1,
+          velocity: { x: 0, y: -0.01, z: 0 }
+        })
+        player.castShadow = true
+        scene.add(player)
+
+        // Enhanced ground with space theme
+        const grounds = []
+        const groundWidth = 10
+        const groundDepth = 200
+        for (let i = 0; i < 2; i++) {
+          const ground = new SpaceShip({
+              width: groundWidth, height: 0.5, depth: groundDepth,
+              color: '#1a1a2e',
+              position: { x: 0, y: -2, z: -i * groundDepth }
+          });
+          ground.receiveShadow = true;
+          scene.add(ground);
+          grounds.push(ground);
+          grounds.push(ground);
+        }
+
+        // Enhanced lighting for space theme
+        const spaceLight = new THREE.DirectionalLight(0x87CEEB, 1.5)
+        spaceLight.position.y = 5
+        spaceLight.position.z = 2
+        spaceLight.castShadow = true
+        scene.add(spaceLight)
+
+        // Ambient glow
+        scene.add(new THREE.AmbientLight(0x4169E1, 0.3))
+
+        // Colorful nebula lights
+        const nebulaLight1 = new THREE.PointLight(0xFF69B4, 0.8, 20)
+        nebulaLight1.position.set(10, 5, 10)
+        scene.add(nebulaLight1)
+
+        const nebulaLight2 = new THREE.PointLight(0x00FFFF, 0.8, 20)
+        nebulaLight2.position.set(-10, 5, -10)
+        scene.add(nebulaLight2)
+
+        const keys = { a: { pressed: false }, d: { pressed: false } }
+
+        window.addEventListener('keydown', (event) => {
+          switch (event.code) {
+            case 'KeyA': keys.a.pressed = true; break
+            case 'KeyD': keys.d.pressed = true; break
+            case 'Space': 
+              let onAnyGround = false;
+              for(const ground of grounds){
+                      if(player.position.y <= ground.top + 0.1){
+                          onAnyGround = true;
+                          break;
+                      }
+              }
+              if (onAnyGround) {
+                  player.velocity.y = 0.12
+              }
+              break
+            case 'KeyR':
+              location.reload();
+              break;
+          }
+        })
+
+        window.addEventListener('keyup', (event) => {
+          switch (event.code) {
+            case 'KeyA': keys.a.pressed = false; break
+            case 'KeyD': keys.d.pressed = false; break
+          }
+        })
+
+        const obstacles = []
+        const obstacleTypes = [AsteroidField, UFO, EnergyField, PlasmaShots, NebulaCloud, SpaceDebris, QuantumGate]
+        let lastSpawnZ = -20
+        const baseSpawnInterval = 25
+
+        function spawnObstacle() {
+          const obstacleTypeIndex = Math.floor(Math.random() * obstacleTypes.length)
+          const ObstacleClass = obstacleTypes[obstacleTypeIndex]
+          
+          const spawnInterval = baseSpawnInterval + (Math.random() - 0.5) * 17
+          const position = new THREE.Vector3(0, 0, lastSpawnZ - spawnInterval)
+          position.x = (Math.random() - 0.5) * 3
+          
+          const newObstacle = new ObstacleClass(position)
+          obstacles.push(newObstacle)
+          lastSpawnZ -= spawnInterval
+        }
+
+        // Initial obstacles
+        for (let i = 0; i < 8; i++) { 
+          spawnObstacle() 
+        }
+
+        let animationId
+        function animate() {
+          animationId = requestAnimationFrame(animate)
+          renderer.render(scene, camera)
+
+          player.velocity.x = 0
+          player.velocity.z = -0.1
+
+          if (keys.a.pressed) player.velocity.x = -0.05
+          else if (keys.d.pressed) player.velocity.x = 0.05
+
+          player.update(grounds)
+          
+          obstacles.forEach((obstacle) => {
+            obstacle.update()
+            
+            obstacle.colliders.forEach(collider => {
+              if (boxCollision({ box1: player, box2: collider })) {
+                document.getElementById('gameOverScreen').style.display = 'block';
+                player.material.color.setHex(0xff0000);
+                cancelAnimationFrame(animationId);
+
+                // Add restart button
+                if (!document.getElementById('restartButton')) {
+                  const restartButton = document.createElement('button');
+                  restartButton.id = 'restartButton';
+                  restartButton.textContent = 'Press R to Restart';
+                  restartButton.className = 'restart-button';
+                  restartButton.onclick = () => location.reload();
+                  document.getElementById('gameOverScreen').appendChild(restartButton);
+                }
+              }
+            })
+          })
+          
+          const cameraOffset = new THREE.Vector3(0, 4, 8)
+          camera.position.copy(player.position).add(cameraOffset)
+          camera.lookAt(player.position)
+
+          if (player.position.z < lastSpawnZ + 100) { spawnObstacle() }
+
+          // Animate nebula lights
+          nebulaLight1.position.x = 10 + Math.sin(Date.now() * 0.001) * 3
+          nebulaLight2.position.x = -10 + Math.cos(Date.now() * 0.001) * 3
+
+          // Ground recycling
+          grounds.forEach(ground => {
+              if (camera.position.z < ground.position.z - ground.depth / 2) {
+                  ground.position.z -= grounds.length * ground.depth;
+              }
+          });
+        }
+
+        // Add space particles
+        const spaceParticles = createSpaceParticles()
+        scene.add(spaceParticles)
+
+        // Start animation
+        animate()
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        })
       }
-      animate()
-      
-      // Add on-screen instructions
-      const instructionsDiv = document.createElement('div');
-      instructionsDiv.innerHTML = `
-        <div style="position: fixed; top: 20px; left: 20px; color: white; font-family: Arial; z-index: 100;
-             background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 10px; border: 2px solid rgba(255, 255, 255, 0.3);">
-          <h2 style="margin: 0 0 15px 0; color: #00ffff; text-shadow: 0 0 10px #00ffff;">🎮 Block Runner Game</h2>
-          <p style="margin: 8px 0; color: #cccccc; font-size: 16px;">
-            <strong>🎯 Objective:</strong> Survive as long as possible without hitting obstacles!
-          </p>
-          <p style="margin: 8px 0; color: #ffeb3b;">
-            ▶ <strong>A</strong> - Move Left | <strong>D</strong> - Move Right
-          </p>
-          <p style="margin: 8px 0; color: #ffeb3b;">
-            ▶ <strong>SPACE</strong> - Jump over obstacles
-          </p>
-          <p style="margin: 8px 0; color: #4caf50;">
-            💡 Dodge 7 different obstacle types:
-          </p>
-          <p style="margin: 5px 0; color: #ffeb3b; font-size: 14px;">
-            • Swinging Bars • Sliding Walls • Moving Pillars • Spinning Cubes<br>
-            • Bouncing Balls • Sliding Platforms • Rotating Circles
-          </p>
-          <p style="margin: 15px 0 5px 0; color: #f44336;">
-            ⚠️ Hit any obstacle = GAME OVER!
-          </p>
-        </div>
-      `;
-      document.body.appendChild(instructionsDiv);
-      
-      // Auto-hide instructions after 10 seconds
-      setTimeout(() => {
-        instructionsDiv.style.opacity = '0.3';
-        instructionsDiv.onclick = () => {
-          instructionsDiv.style.display = 'none';
-        };
-      }, 10000);
+
+      // Initialize starfield
+      createStarfield();
+
+      // Make startGame globally accessible
+      window.startGame = startGame;
     </script>
 </body>
 </html>
