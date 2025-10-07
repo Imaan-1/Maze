@@ -2,12 +2,12 @@
 
 **_“Dodge. Jump. Survive. Conquer the stars.”_**
 
-**Space Runner: Galactic Escape** is a thrilling 3D browser game where you control a space cube racing through the galaxy.  
+**Space Runner: Galactic Escape** is a thrilling 3D browser game where you control a space rocket racing through the galaxy.  
 Your mission? **Navigate dangerous space obstacles, barriers, and survive as long as possible!**
 
 ## 🎮 **Gameplay Overview**
 
-You play as a small cube hurtling through a series of shifting platforms and moving obstacles.  
+You play as a space rocket hurtling through a series of shifting platforms and moving obstacles.  
 The obstacles move dynamically, testing your reaction time and precision jumps and your reflexes are pushed to the limit.
 
 **🎯 Objective:**  
