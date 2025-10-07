@@ -128,7 +128,7 @@ function createAsteroidModel() {
 
 function initGame() {
   let isFirstPerson = false; // default:third-person
-  const gameState = { score: 0, currentLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null };
+  const gameState = { score: 0, currentLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null, singularityUsed: false }; // ADDED: singularityUsed
   const gameConfig = { playerSpeed: -0.12, spawnInterval: 25, levelColors: { 1: { bg: '#010103' }, 2: { bg: '#0c0a1f' }, 3: { bg: '#1d0b30' } } };
   const LEVEL_THRESHOLDS = { 2: 300, 3: 700};
   const scene = new THREE.Scene();
@@ -148,7 +148,7 @@ function initGame() {
   const trailMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true }); const trailGeometry = new THREE.SphereGeometry(0.15, 6, 6);
   
   class Box extends THREE.Mesh { constructor({width,height,depth,color,position,emissiveIntensity}) { super(new THREE.BoxGeometry(width,height,depth), new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:emissiveIntensity===undefined?0.2:emissiveIntensity})); this.width=width;this.height=height;this.depth=depth;this.position.set(position.x,position.y,position.z);}}
-  class Player extends THREE.Group { constructor({ characterId, velocity = {x:0,y:0,z:0}, position={x:0,y:0,z:0}}) { super(); this.position.set(position.x, position.y, position.z); this.velocity = velocity; this.gravity = -0.004; this.onGround = false; const objData = PLAYER_OBJECTS[characterId]; this.width = objData.colliderSize.width; this.height = objData.colliderSize.height; this.depth = objData.colliderSize.depth; this.visualModel = objData.createModel(); if (characterId === 'rocket') { this.visualModel.rotation.x = -Math.PI / 2; this.visualModel.position.z = -0.2; } this.add(this.visualModel); const colliderGeo = new THREE.BoxGeometry(this.width, this.height, this.depth); const colliderMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }); this.colliderBox = new THREE.Mesh(colliderGeo, colliderMat); this.add(this.colliderBox); } update(grounds) { this.position.x += this.velocity.x; this.position.z += this.velocity.z; this.applyGravity(grounds); } applyGravity(grounds) { this.velocity.y += this.gravity; this.position.y += this.velocity.y; this.onGround = false; for (const ground of grounds) { if (boxCollision({ box1: this.colliderBox, box2: ground })) { this.onGround = true; this.velocity.y = 0; this.position.y = (ground.position.y + ground.height / 2) + this.height / 2; break; } } } }
+  class Player extends THREE.Group { constructor({ characterId, velocity = {x:0,y:0,z:0}, position={x:0,y:0,z:0}}) { super(); this.position.set(position.x, position.y, position.z); this.velocity = velocity; this.gravity = -0.004; this.onGround = false; const objData = PLAYER_OBJECTS[characterId]; this.width = objData.colliderSize.width; this.height = objData.colliderSize.height; this.depth = objData.colliderSize.depth; this.visualModel = objData.createModel(); if (characterId === 'rocket') { this.visualModel.rotation.x = -Math.PI / 2; this.visualModel.position.z = -0.2; } this.add(this.visualModel); const colliderGeo = new THREE.BoxGeometry(this.width, this.height, this.depth); const colliderMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }); this.colliderBox = new THREE.Mesh(colliderGeo, colliderMat); this.add(this.colliderBox); this.orbitingObstacles = []; } update(grounds) { this.position.x += this.velocity.x; this.position.z += this.velocity.z; this.applyGravity(grounds); if (this.orbitingObstacles.length > 0) { this.orbitingObstacles.forEach((obstacle, index) => { const angle = Date.now() * 0.001 + index; obstacle.group.position.x = Math.cos(angle) * 3; obstacle.group.position.z = Math.sin(angle) * 3; }); } } applyGravity(grounds) { this.velocity.y += this.gravity; this.position.y += this.velocity.y; this.onGround = false; for (const ground of grounds) { if (boxCollision({ box1: this.colliderBox, box2: ground })) { this.onGround = true; this.velocity.y = 0; this.position.y = (ground.position.y + ground.height / 2) + this.height / 2; break; } } } }
   class AsteroidField { constructor(p){this.group=new THREE.Group();p.y=-1.75;this.group.position.copy(p);scene.add(this.group);this.colliders=[];for(let i=0;i<4;i++){const a=new Box({width:Math.random()*1+.8,height:Math.random()*1+.8,depth:Math.random()*1+.8,color:['#8B4513','#CD853F','#D2691E','#A0522D'][i],position:{x:(i-2)*2,y:.4,z:0},emissiveIntensity:0});a.scale.set(Math.random()*.3+.7,Math.random()*.3+.7,Math.random()*.3+.7);a.castShadow=true;this.group.add(a);this.colliders.push(a)}}update(){const t=Date.now()*.001;this.group.children.forEach((a,i)=>{a.position.x=(i-2)*2+Math.sin(t+i)*2.5;a.rotation.x+=.01;a.rotation.y+=.015;a.rotation.z+=.008})}}
   class UFO { constructor(p){this.group=new THREE.Group();p.y=-1.75;this.group.position.copy(p);scene.add(this.group);this.colliders=[];const b=new Box({width:3,height:1,depth:3,color:'#FFD700',position:{x:0,y:.5,z:0}});const d=new Box({width:2,height:1.5,depth:2,color:'#FF6B6B',position:{x:0,y:1.25,z:0}});b.castShadow=true;d.castShadow=true;this.group.add(b);this.group.add(d);this.colliders.push(b,d)}update(){const t=Date.now()*.0008;this.group.position.x=Math.sin(t)*4;this.group.children.forEach(c=>{c.rotation.y=t*.5})}}
   
@@ -204,7 +204,7 @@ function initGame() {
   function boxCollision({box1,box2}){const b1p=new THREE.Vector3();box1.getWorldPosition(b1p);const b2p=new THREE.Vector3();box2.getWorldPosition(b2p);const b1=box1.geometry.parameters;const b2=box2.geometry.parameters;return(Math.abs(b1p.x-b2p.x)*2<(b1.width+b2.width))&&(Math.abs(b1p.y-b2p.y)*2<(b1.height+b2.height))&&(Math.abs(b1p.z-b2p.z)*2<(b1.depth+b2.depth))}
   
   function setupNewGame() {
-      gameState.isGameOver=false;gameState.score=0;gameState.currentLevel=1;gameState.newlyUnlockedCharacterId=null;
+      gameState.isGameOver=false;gameState.score=0;gameState.currentLevel=1;gameState.newlyUnlockedCharacterId=null;gameState.singularityUsed = false; // Reset ability on new game
       // --- BUG FIX: Reset the speed to the base Level 1 speed at the start of every game ---
       gameConfig.playerSpeed = -0.12;
       gameConfig.spawnInterval=25;lastSpawnZ=-20;
@@ -286,6 +286,103 @@ function initGame() {
     if(e.code === 'KeyV') isFirstPerson = !isFirstPerson;
 });
 
+  // --- SINGULARITY ABILITY ---
+  window.addEventListener('keydown', e => {
+      if (e.code === 'KeyQ' && selectedObjectId === 'planet' && !gameState.singularityUsed) {
+          activateSingularity();
+      }
+  });
+
+  let rippleEffect; // Store the ripple effect object
+
+  function activateSingularity() {
+      if (gameState.singularityUsed) return;
+      gameState.singularityUsed = true;
+
+      // Create ripple effect
+      const rippleGeometry = new THREE.SphereGeometry(1, 32, 32);
+      const rippleMaterial = new THREE.MeshBasicMaterial({
+          color: 0x00ffff,
+          transparent: true,
+          opacity: 0.5,
+          wireframe: true
+      });
+      rippleEffect = new THREE.Mesh(rippleGeometry, rippleMaterial);
+      rippleEffect.position.copy(player.position);
+      scene.add(rippleEffect);
+
+      // Animate ripple effect
+      let rippleSize = 1;
+      const animateRipple = () => {
+          rippleSize += 0.1;
+          rippleEffect.scale.set(rippleSize, rippleSize, rippleSize);
+          rippleEffect.material.opacity -= 0.01;
+
+          if (rippleEffect.material.opacity <= 0) {
+              scene.remove(rippleEffect);
+              rippleEffect.geometry.dispose();
+              rippleEffect.material.dispose();
+              rippleEffect = null;
+          } else {
+              requestAnimationFrame(animateRipple);
+          }
+      };
+      animateRipple();
+
+      // Find nearby obstacles
+      obstacles.forEach(obstacle => {
+          const distance = player.position.distanceTo(obstacle.group.position);
+          if (distance < 8) {
+              player.orbitingObstacles.push(obstacle);
+              obstacle.group.position.set(0, 2, 0); // Set relative position for orbit
+              player.add(obstacle.group); // Add to player group for orbiting
+
+              // Add glow to orbiting obstacles
+              obstacle.group.traverse(child => {
+                  if (child instanceof THREE.Mesh) {
+                      child.material.emissive = new THREE.Color(0x00ffff);
+                      child.material.emissiveIntensity = 0.5;
+                  }
+              });
+          }
+      });
+
+      // Set timer to release obstacles
+      setTimeout(() => {
+          releaseOrbitingObstacles();
+      }, 3000);
+  }
+
+  function releaseOrbitingObstacles() {
+      player.orbitingObstacles.forEach(obstacle => {
+          player.remove(obstacle.group); // Remove from player group
+          scene.add(obstacle.group); // Add back to the scene
+
+          // Remove glow
+          obstacle.group.traverse(child => {
+              if (child instanceof THREE.Mesh) {
+                  child.material.emissive = new THREE.Color(0x000000);
+                  child.material.emissiveIntensity = 0;
+              }
+          });
+
+          // Apply random force
+          const force = new THREE.Vector3(Math.random() - 0.5, 0, Math.random() - 0.5).normalize().multiplyScalar(0.5);
+          obstacle.group.velocity = force; // Assuming obstacles have a velocity property
+
+          // Animate the outward movement
+          const animateOutward = () => {
+              obstacle.group.position.add(obstacle.group.velocity);
+              obstacle.group.velocity.multiplyScalar(0.95); // Damping
+
+              if (obstacle.group.velocity.length() > 0.01) {
+                  requestAnimationFrame(animateOutward);
+              }
+          };
+          animateOutward();
+      });
+      player.orbitingObstacles = [];
+  }
   
   function animate() {
     animationId = requestAnimationFrame(animate);
