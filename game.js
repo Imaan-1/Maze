@@ -125,7 +125,7 @@ function createAsteroidModel() {
     return modelGroup;
 }
 
-// --- MAIN GAME LOGIC ---
+
 function initGame() {
   let isFirstPerson = false; // default:third-person
   const gameState = { score: 0, currentLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null };
@@ -139,6 +139,11 @@ function initGame() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.getElementById('gameScreen').appendChild(renderer.domElement);
   
+  // --- HIGH SCORE SYSTEM ---
+  let highScore = localStorage.getItem('spaceRunnerHighScore') || 0;
+  highScore = parseInt(highScore); // Ensure it's a number
+  document.getElementById('highScore').innerText = `High Score: ${highScore}`;
+
   let player, obstacles = [], trailParticles = [], grounds = [], lastSpawnZ, animationId;
   const trailMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true }); const trailGeometry = new THREE.SphereGeometry(0.15, 6, 6);
   
@@ -307,6 +312,12 @@ function initGame() {
     grounds.forEach(g=>{if(camera.position.z<g.position.z-g.depth/2)g.position.z-=grounds.length*g.depth});
     if(!gameState.isGameOver){
         gameState.score=Math.floor(-player.position.z); document.getElementById('score').innerText=`Score: ${gameState.score}`;
+        // --- HIGH SCORE CHECK ---
+        if (gameState.score > highScore) {
+            highScore = gameState.score;
+            localStorage.setItem('spaceRunnerHighScore', highScore);
+            document.getElementById('highScore').innerText = `High Score: ${highScore}`;
+        }
         const nL=gameState.currentLevel+1;
         if(LEVEL_THRESHOLDS[nL]&&gameState.score>=LEVEL_THRESHOLDS[nL]){
             gameState.currentLevel=nL; document.getElementById('level').innerText=`Level: ${gameState.currentLevel}`;
