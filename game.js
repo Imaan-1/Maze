@@ -129,7 +129,7 @@ function createAsteroidModel() {
 function initGame() {
   let isFirstPerson = false; // default:third-person
   const gameState = { score: 0, currentLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null, singularityUsed: false }; // ADDED: singularityUsed
-  const gameConfig = { playerSpeed: -0.12, spawnInterval: 25, levelColors: { 1: { bg: '#010103' }, 2: { bg: '#0c0a1f' }, 3: { bg: '#1d0b30' } } };
+  const gameConfig = { playerSpeed: -0.15, spawnInterval: 25, levelColors: { 1: { bg: '#010103' }, 2: { bg: '#0c0a1f' }, 3: { bg: '#1d0b30' } } };
   const LEVEL_THRESHOLDS = { 2: 300, 3: 700};
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(gameConfig.levelColors[1].bg);
@@ -422,10 +422,10 @@ function initGame() {
             Object.keys(PLAYER_OBJECTS).forEach(key=>{const obj=PLAYER_OBJECTS[key];if(!obj.isUnlocked&&gameState.currentLevel>=obj.unlockLevel){obj.isUnlocked=true; gameState.newlyUnlockedCharacterId = key; const uN=document.getElementById('unlock-notification');uN.innerHTML=`New Vehicle Unlocked:<br/><strong>${obj.name}</strong>`;uN.classList.add('show');setTimeout(()=>uN.classList.remove('show'),3000);const unlocked=JSON.parse(localStorage.getItem('spaceRunnerUnlocks'))||['rocket'];if(!unlocked.includes(key)){unlocked.push(key);localStorage.setItem('spaceRunnerUnlocks',JSON.stringify(unlocked));}}});
             
             if(nL===2){
-                gameConfig.playerSpeed=-.17;
+                gameConfig.playerSpeed=-.25;
                 gameConfig.spawnInterval=22;
             } else if(nL===3){
-                gameConfig.playerSpeed=-.22;
+                gameConfig.playerSpeed=-.30;
                 gameConfig.spawnInterval=18;
             }
 
