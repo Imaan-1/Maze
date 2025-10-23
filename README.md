@@ -23,6 +23,7 @@ Survive for as long as you can and achieve the highest score!
 | **SPACE** | Jump |
 | **R** | Restart Game |
 | **V** | Switch View |
+| **Q** | Special Power for Planet |
 
 ---
 
