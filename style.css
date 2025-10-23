@@ -8,6 +8,43 @@ body { background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #1a1a4a 100%
 .menu-content { text-align: center; padding: 30px; background: rgba(0, 0, 0, 0.7); border-radius: 20px; border: 2px solid rgba(56, 189, 248, 0.5); box-shadow: 0 0 50px rgba(56, 189, 248, 0.3); backdrop-filter: blur(10px); animation: float 6s ease-in-out infinite; }
 @keyframes float { 0% { transform: translatey(0px); } 50% { transform: translatey(-15px); } 100% { transform: translatey(0px); } }
 .game-title { font-size: 3.5rem; color: #38bdf8; text-shadow: 0 0 20px #38bdf8, 0 0 40px #38bdf8; margin-bottom: 15px; }
+.game-subtitle { color: #e5e7eb; font-size: 1.2rem; margin-bottom: 25px; letter-spacing: 2px; }
+
+/* Level Selector Styles */
+#level-selector-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+.level-select-btn {
+  padding: 10px 20px;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 2px solid #60a5fa;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+.level-select-btn:hover:not(:disabled) {
+  background: rgba(96, 165, 250, 0.3);
+}
+.level-select-btn.selected {
+  background: #3b82f6;
+  box-shadow: 0 0 15px #3b82f6;
+}
+.level-select-btn:disabled {
+  background: rgba(75, 85, 99, 0.5);
+  border-color: #4b5563;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+.level-select-btn:disabled span {
+  opacity: 0.7;
+}
+
 #character-selection { display: flex; align-items: center; justify-content: center; margin-bottom: 25px; }
 #char-display { position: relative; width: 180px; height: 150px; display: flex; flex-direction: column; align-items: center; }
 #character-preview { width: 180px; height: 120px; cursor: grab; }
@@ -33,7 +70,7 @@ body { background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #1a1a4a 100%
 #gameOverScreen h1 { font-size: 2.5rem; color: #ff6b6b; margin-bottom: 15px; }
 #gameOverScreen p { font-size: 1rem; margin-bottom: 15px; }
 
-/* --- NEW STYLES --- */
+/* --- UNLOCK PROMPT STYLES --- */
 #unlock-prompt {
     padding: 15px;
     background-color: rgba(251, 191, 36, 0.1);
@@ -64,7 +101,42 @@ body { background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #1a1a4a 100%
     transform: translateY(-3px);
     background: linear-gradient(45deg, #d946ef, #c026d3);
 }
-/* --- END NEW STYLES --- */
+
+.play-next-button {
+    width: 100%;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(45deg, #059669, #10b981); /* Green 'go' color */
+    font-weight: bold;
+}
+.play-next-button:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(45deg, #10b981, #34d399);
+}
+
+/* --- NEW STYLE FOR COMBINED BUTTON --- */
+.play-combined-button {
+    width: 100%;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    color: #1f2937; /* Dark text for light button */
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(45deg, #fbbf24, #f59e0b); /* Gold/Yellow */
+    font-weight: bold;
+}
+.play-combined-button:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(45deg, #fcd34d, #fbbf24);
+}
+/* --- END NEW STYLE --- */
 
 #game-over-buttons { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
 .restart-button, .menu-button { padding: 12px 24px; font-size: 1.2rem; color: white; border: none; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; }
