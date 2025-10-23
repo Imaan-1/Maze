@@ -48,6 +48,10 @@
         <div id="level">Level: 1</div>
         <div id="highScore">High Score: 0</div>
       </div>
+      <button id="pause-button">
+        <span class="pause-icon-bar"></span>
+        <span class="pause-icon-bar"></span>
+      </button> 
       <div id="levelUp"></div>
       <div id="unlock-notification" class="hidden"></div>
       <div id="gameOverScreen">
@@ -58,6 +62,17 @@
           <div id="unlock-prompt"></div>
 
           <div id="game-over-buttons"></div>
+        </div>
+      </div>
+
+      <div id="pauseScreen">
+        <div class="pause-content-box">
+          <h2 style="color: #fbbf24; margin-bottom: 30px;">Your game has been paused</h2>
+          <div id="pause-buttons-container">
+            <button id="resume-button" class="resume-button">Resume</button>
+            <button id="restart-pause-button" class="restart-button">Restart</button>
+            <button id="menu-pause-button" class="menu-button">Back to Menu</button>
+          </div>
         </div>
       </div>
 

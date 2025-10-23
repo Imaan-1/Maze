@@ -165,6 +165,7 @@ function createAsteroidModel() {
 
 function initGame() {
   let isFirstPerson = false;
+  let isPaused = false; // NEW PAUSE STATE
   
   const gameState = { score: 0, internalLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null, newlyUnlockedLevel: null, singularityUsed: false };
   const gameConfig = { playerSpeed: -0.15, spawnInterval: 25, levelColors: { 1: { bg: '#010103' }, 2: { bg: '#0c0a1f' }, 3: { bg: '#1d0b30' } } };
@@ -178,6 +179,13 @@ function initGame() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.getElementById('gameScreen').appendChild(renderer.domElement);
   
+  // --- NEW: PAUSE MENU DOM ELEMENTS ---
+  const pauseButton = document.getElementById('pause-button');
+  const pauseScreen = document.getElementById('pauseScreen');
+  const resumeButton = document.getElementById('resume-button');
+  const restartPauseButton = document.getElementById('restart-pause-button');
+  const menuPauseButton = document.getElementById('menu-pause-button');
+
   document.getElementById('highScore').innerText = `High Score: ${highScores[selectedLevel]}`;
 
   let player, obstacles = [], trailParticles = [], grounds = [], lastSpawnZ, animationId;
@@ -237,6 +245,10 @@ function initGame() {
   function boxCollision({box1,box2}){const b1p=new THREE.Vector3();box1.getWorldPosition(b1p);const b2p=new THREE.Vector3();box2.getWorldPosition(b2p);const b1=box1.geometry.parameters;const b2=box2.geometry.parameters;return(Math.abs(b1p.x-b2p.x)*2<(b1.width+b2.width))&&(Math.abs(b1p.y-b2p.y)*2<(b1.height+b2.height))&&(Math.abs(b1p.z-b2p.z)*2<(b1.depth+b2.depth))}
   
   function setupNewGame() {
+      isPaused = false; // NEW
+      pauseScreen.style.display = 'none'; // NEW
+      pauseButton.style.display = 'flex'; // MODIFIED: Changed from 'block' to 'flex'
+
       gameState.isGameOver=false;gameState.score=0;
       gameState.internalLevel = selectedLevel; 
       gameState.newlyUnlockedCharacterId=null; 
@@ -272,7 +284,8 @@ function initGame() {
       document.getElementById('level').innerText=`Level: ${selectedLevel}`;
       document.getElementById('highScore').innerText=`High Score: ${highScores[selectedLevel]}`;
       
-      if(animationId) cancelAnimationFrame(animationId); animate();
+      if(animationId) cancelAnimationFrame(animationId); 
+      animate();
   }
 
   function spawnObstacle() {
@@ -297,6 +310,11 @@ function initGame() {
   function triggerGameOver(r){
       if(gameState.isGameOver)return;
       gameState.isGameOver=true;
+      
+      pauseButton.style.display = 'none'; // NEW
+      pauseScreen.style.display = 'none'; // NEW
+      isPaused = false; // NEW
+      
       cancelAnimationFrame(animationId);
       document.getElementById('gameOverReason').textContent=r;
       
@@ -313,7 +331,7 @@ function initGame() {
 
       // Check for Level Unlock
       if (gameState.newlyUnlockedLevel) {
-          unlockHTML += `<p class="unlock-congrats">🏆 Level ${gameState.newlyUnlockedLevel} Unlocked! 🏆</p>`;
+          unlockHTML += `<p class="unlock-congrats">🎊 Level ${gameState.newlyUnlockedLevel} Unlocked! 🎊</p>`;
           hasUnlock = true;
       }
 
@@ -347,7 +365,7 @@ function initGame() {
           if (gameState.newlyUnlockedLevel && !gameState.newlyUnlockedCharacterId) {
               const playNextBtn = document.createElement('button');
               playNextBtn.className = 'play-next-button'; 
-              playNextBtn.textContent = `🎮 Play Level ${gameState.newlyUnlockedLevel}`;
+              playNextBtn.textContent = `▶️ Play Level ${gameState.newlyUnlockedLevel}`;
               playNextBtn.onclick = () => {
                   selectedLevel = gameState.newlyUnlockedLevel;
                   resetGame();
@@ -401,6 +419,11 @@ function initGame() {
 
   function backToMenu() { 
     if(animationId) cancelAnimationFrame(animationId); 
+    
+    isPaused = false; // NEW
+    pauseButton.style.display = 'none'; // NEW
+    pauseScreen.style.display = 'none'; // NEW
+
     cleanUpScene(); 
     document.getElementById('gameOverScreen').style.display = 'none'; 
     document.getElementById('gameScreen').style.display = 'none'; 
@@ -409,7 +432,7 @@ function initGame() {
     updateLevelSelectorUI(); 
   }
   
-  window.addEventListener('keydown',e=>{switch(e.code){case'KeyA':keys.a.pressed=true;break;case'KeyD':keys.d.pressed=true;break;case'Space':if(player&&player.onGround)player.velocity.y=.12;break;case'KeyR':if(gameState.isGameOver)resetGame();break}});
+  window.addEventListener('keydown',e=>{switch(e.code){case'KeyA':keys.a.pressed=true;break;case'KeyD':keys.d.pressed=true;break;case'Space':if(player&&player.onGround)player.velocity.y=.12;break;case'KeyR':if(gameState.isGameOver)resetGame();break;case'KeyP':togglePause(!isPaused);break;}}); // Added 'P' to pause
   window.addEventListener('keyup',e=>{switch(e.code){case'KeyA':keys.a.pressed=false;break;case'KeyD':keys.d.pressed=false;break}});
   window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight)});
   window.addEventListener('keydown', e => {
@@ -492,8 +515,45 @@ function initGame() {
       });
       player.orbitingObstacles = [];
   }
+
+  // --- NEW PAUSE LOGIC ---
+  function togglePause(pauseState) {
+      if (gameState.isGameOver) return; // Don't allow pause on game over
+      isPaused = pauseState;
+      pauseScreen.style.display = isPaused ? 'block' : 'none';
+      
+      // Only show pause button if not paused AND not game over
+      if (!isPaused && !gameState.isGameOver) {
+          pauseButton.style.display = 'flex'; // MODIFIED: Changed from 'block' to 'flex'
+      } else {
+          pauseButton.style.display = 'none';
+      }
+      
+      if (isPaused) {
+          cancelAnimationFrame(animationId); // Stop the loop
+      } else {
+          animate(); // Restart the loop
+      }
+  }
+
+  pauseButton.addEventListener('click', () => togglePause(true));
+  resumeButton.addEventListener('click', () => togglePause(false));
+  
+  restartPauseButton.addEventListener('click', () => {
+      pauseScreen.style.display = 'none';
+      isPaused = false;
+      resetGame(); 
+  });
+
+  menuPauseButton.addEventListener('click', () => {
+      pauseScreen.style.display = 'none';
+      isPaused = false;
+      backToMenu();
+  });
   
   function animate() {
+    if (isPaused) return; // NEW: Check if paused
+
     animationId = requestAnimationFrame(animate);
     player.update(grounds);
     if (isFirstPerson) {
