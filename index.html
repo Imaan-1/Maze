@@ -14,6 +14,12 @@
         <h1 class="game-title">🚀SPACE RUNNER🚀</h1>
         <p class="game-subtitle">⭐ GALACTIC ESCAPE ⭐</p>
 
+        <div id="level-selector-container">
+          <button id="level-1-btn" class="level-select-btn selected">Level 1</button>
+          <button id="level-2-btn" class="level-select-btn" disabled>Level 2 <span>🔒</span></button>
+          <button id="level-3-btn" class="level-select-btn" disabled>Level 3 <span>🔒</span></button>
+        </div>
+
         <div id="character-selection">
             <button id="prev-char" class="char-arrow">◀</button>
             <div id="char-display">
@@ -31,7 +37,7 @@
           🎮 START MISSION
         </button>
         <div class="game-info">
-          <p><strong>🎯Controls:</strong> A/D to move • SPACE to jump • Q for special power (Planet only)🎯</p>
+          <p><strong>🎯Controls:</strong> A/D to move • SPACE to jump • Q for special power (Planet only) • V to switch viewpoints🎯</p>
         </div>
       </div>
     </div>
@@ -54,7 +60,8 @@
           <div id="game-over-buttons"></div>
         </div>
       </div>
-    </div>
+
+      </div>
 
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
