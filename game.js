@@ -167,7 +167,8 @@ function initGame() {
   let isFirstPerson = false;
   let isPaused = false; // NEW PAUSE STATE
   
-  const gameState = { score: 0, internalLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null, newlyUnlockedLevel: null, singularityUsed: false };
+  // ADDED highScoreNotified property
+  const gameState = { score: 0, internalLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null, newlyUnlockedLevel: null, singularityUsed: false, highScoreNotified: false };
   const gameConfig = { playerSpeed: -0.15, spawnInterval: 25, levelColors: { 1: { bg: '#010103' }, 2: { bg: '#0c0a1f' }, 3: { bg: '#1d0b30' } } };
   const INTERNAL_LEVEL_THRESHOLDS = { 4: 4000, 5: 7000}; 
   
@@ -254,6 +255,7 @@ function initGame() {
       gameState.newlyUnlockedCharacterId=null; 
       gameState.newlyUnlockedLevel = null; 
       gameState.singularityUsed = false;
+      gameState.highScoreNotified = false; // <-- ADD THIS LINE
       
       // --- MODIFICATION: Speeds adjusted to be even slower ---
       switch(selectedLevel) {
@@ -582,11 +584,20 @@ function initGame() {
         gameState.score=Math.floor(-player.position.z); 
         document.getElementById('score').innerText=`Score: ${gameState.score}`;
 
+        // MODIFIED THIS BLOCK
         if (gameState.score > highScores[selectedLevel]) {
+            if (!gameState.highScoreNotified) { // Check if already notified
+                gameState.highScoreNotified = true; // Set flag
+                const lUE = document.getElementById('levelUp');
+                lUE.innerText = `🌟 New High Score! 🌟`; // New message
+                lUE.classList.add('show');
+                setTimeout(() => lUE.classList.remove('show'), 2500); // 2.5s duration
+            }
             highScores[selectedLevel] = gameState.score;
             localStorage.setItem('spaceRunnerHighScores', JSON.stringify(highScores));
             document.getElementById('highScore').innerText = `High Score: ${highScores[selectedLevel]}`;
         }
+        // END OF MODIFICATION
         
         // --- Level & Character Unlock Logic (Non-Stopping) ---
                 

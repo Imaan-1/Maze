@@ -60,8 +60,31 @@ body { background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #1a1a4a 100%
 .start-button:disabled { background: #4b5563; box-shadow: none; transform: none; cursor: not-allowed; }
 .game-info { font-size: 0.9rem; }
 #gameScreen { display: none; }
-#hud { position: absolute; top: 20px; left: 20px; font-size: 1.5rem; z-index: 200; }
-#level { margin-top: 10px; }
+
+/* --- MODIFIED HUD STYLES --- */
+#hud { 
+  position: absolute; 
+  top: 20px; 
+  left: 20px; 
+  font-size: 1.5rem; /* Base size for score/highScore */
+  z-index: 200; 
+  color: white; 
+}
+/* MODIFIED THIS RULE */
+#level { 
+  font-size: 2.5rem; /* Made it bigger */
+  font-weight: bold;
+  color: #fbbf24; /* Applied golden color */
+  text-shadow: 0 0 10px #fbbf24; /* Applied glow */
+  margin-bottom: 8px; /* Added space below it */
+}
+/* ADDED THIS RULE for spacing */
+#score {
+  margin-bottom: 5px;
+}
+/* --- END OF MODIFIED HUD STYLES --- */
+
+
 #levelUp, #unlock-notification { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fbbf24; font-size: 4rem; font-weight: bold; text-shadow: 0 0 20px #fbbf24; z-index: 1100; opacity: 0; pointer-events: none; text-align: center; width: 100%; }
 #unlock-notification { font-size: 2.5rem; }
 #levelUp.show, #unlock-notification.show { animation: notifyAnimation 2.5s forwards; }
