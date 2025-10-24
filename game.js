@@ -11,7 +11,7 @@ const characterOrder = ['rocket', 'asteroid', 'planet'];
 
 // --- Level State Management ---
 let selectedLevel = 1;
-const LEVEL_UNLOCK_SCORES = { 1: 100, 2: 1000, 3: Infinity }; 
+const LEVEL_UNLOCK_SCORES = { 1: 1000, 2: 1000, 3: Infinity }; 
 let unlockedLevels = { 1: true, 2: false, 3: false };
 let highScores = { 1: 0, 2: 0, 3: 0 };
 
