@@ -88,6 +88,8 @@ function setupMenu() {
         2: document.getElementById('level-2-btn'),
         3: document.getElementById('level-3-btn')
     };
+    
+    // --- THIS FUNCTION IS UPDATED ---
     updateLevelSelectorUI = () => {
         for (const [level, btn] of Object.entries(levelBtns)) {
             if (unlockedLevels[level]) {
@@ -103,7 +105,36 @@ function setupMenu() {
                 btn.classList.remove('selected');
             }
         }
+
+        // --- ADDED THIS NEW LOGIC ---
+        const unlock2Info = document.getElementById('unlock-level-2-info');
+        const unlock3Info = document.getElementById('unlock-level-3-info');
+        const unlockContainer = document.getElementById('unlock-info-container');
+
+        // Hide Level 2 unlock text if Level 2 is unlocked
+        if (unlockedLevels[2]) {
+            unlock2Info.classList.add('hidden');
+        } else {
+            unlock2Info.classList.remove('hidden'); // Show if not unlocked
+        }
+
+        // Hide Level 3 unlock text if Level 3 is unlocked
+        if (unlockedLevels[3]) {
+            unlock3Info.classList.add('hidden');
+        } else {
+            unlock3Info.classList.remove('hidden'); // Show if not unlocked
+        }
+        
+        // Hide the whole container if BOTH are unlocked
+        if (unlockedLevels[2] && unlockedLevels[3]) {
+            unlockContainer.classList.add('hidden');
+        } else {
+            unlockContainer.classList.remove('hidden');
+        }
+        // --- END OF ADDED LOGIC ---
     };
+    // --- END OF UPDATED FUNCTION ---
+    
     levelBtns[1].addEventListener('click', () => { selectedLevel = 1; updateLevelSelectorUI(); });
     levelBtns[2].addEventListener('click', () => { if (unlockedLevels[2]) { selectedLevel = 2; updateLevelSelectorUI(); } });
     levelBtns[3].addEventListener('click', () => { if (unlockedLevels[3]) { selectedLevel = 3; updateLevelSelectorUI(); } });
