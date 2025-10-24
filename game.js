@@ -167,8 +167,8 @@ function initGame() {
   let isFirstPerson = false;
   let isPaused = false; // NEW PAUSE STATE
   
-  // ADDED highScoreNotified property
-  const gameState = { score: 0, internalLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null, newlyUnlockedLevel: null, singularityUsed: false, highScoreNotified: false };
+  // ADDED startingHighScore property
+  const gameState = { score: 0, internalLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null, newlyUnlockedLevel: null, singularityUsed: false, highScoreNotified: false, startingHighScore: 0 };
   const gameConfig = { playerSpeed: -0.15, spawnInterval: 25, levelColors: { 1: { bg: '#010103' }, 2: { bg: '#0c0a1f' }, 3: { bg: '#1d0b30' } } };
   const INTERNAL_LEVEL_THRESHOLDS = { 4: 4000, 5: 7000}; 
   
@@ -255,7 +255,8 @@ function initGame() {
       gameState.newlyUnlockedCharacterId=null; 
       gameState.newlyUnlockedLevel = null; 
       gameState.singularityUsed = false;
-      gameState.highScoreNotified = false; // <-- ADD THIS LINE
+      gameState.highScoreNotified = false; // RESET THE FLAG
+      gameState.startingHighScore = highScores[selectedLevel]; // <-- ADD THIS: Snapshot the high score
       
       // --- MODIFICATION: Speeds adjusted to be even slower ---
       switch(selectedLevel) {
@@ -584,20 +585,26 @@ function initGame() {
         gameState.score=Math.floor(-player.position.z); 
         document.getElementById('score').innerText=`Score: ${gameState.score}`;
 
-        // MODIFIED THIS BLOCK
+        // --- MODIFIED HIGH SCORE BLOCK ---
         if (gameState.score > highScores[selectedLevel]) {
-            if (!gameState.highScoreNotified) { // Check if already notified
-                gameState.highScoreNotified = true; // Set flag
+            
+            // Check if we should notify:
+            // 1. We haven't notified yet in this run.
+            // 2. The high score AT THE START of this run (which we saved) was > 0.
+            if (!gameState.highScoreNotified && gameState.startingHighScore > 0) {
+                gameState.highScoreNotified = true; // Set flag so it only shows once
                 const lUE = document.getElementById('levelUp');
                 lUE.innerText = `🌟 New High Score! 🌟`; // New message
                 lUE.classList.add('show');
                 setTimeout(() => lUE.classList.remove('show'), 2500); // 2.5s duration
             }
+            
+            // Always update the high score value, regardless of notification
             highScores[selectedLevel] = gameState.score;
             localStorage.setItem('spaceRunnerHighScores', JSON.stringify(highScores));
             document.getElementById('highScore').innerText = `High Score: ${highScores[selectedLevel]}`;
         }
-        // END OF MODIFICATION
+        // --- END OF MODIFIED BLOCK ---
         
         // --- Level & Character Unlock Logic (Non-Stopping) ---
                 
