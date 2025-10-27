@@ -4,10 +4,13 @@ import * as THREE from 'three';
 const PLAYER_OBJECTS = {
     rocket: { name: "Galaxy Cruiser", isUnlocked: true, unlockLevel: 1, createModel: createRocketModel, colliderSize: { width: 1, height: 1, depth: 1.8 } },
     asteroid: { name: "Rogue Asteroid", isUnlocked: false, unlockLevel: 2, createModel: createAsteroidModel, colliderSize: { width: 1.2, height: 1.2, depth: 1.2 } },
-    planet: { name: "Wandering Saturn", isUnlocked: false, unlockLevel: 3, createModel: createSaturnModel, colliderSize: { width: 1.5, height: 1.5, depth: 1.5 } }
+    planet: { name: "Wandering Saturn", isUnlocked: false, unlockLevel: 3, createModel: createSaturnModel, colliderSize: { width: 1.5, height: 1.5, depth: 1.5 } },
+    // --- MODIFIED ---
+    orb: { name: "Swirling Orb", isUnlocked: false, unlockLevel: 3, createModel: createOrbModel, colliderSize: { width: 1.4, height: 1.4, depth: 1.4 }, unlockText: "Score 1000 in Level 3" }
 };
 let selectedObjectId = 'rocket';
-const characterOrder = ['rocket', 'asteroid', 'planet'];
+// --- MODIFIED ---
+const characterOrder = ['rocket', 'asteroid', 'planet', 'orb'];
 
 // --- Level State Management ---
 let selectedLevel = 1;
@@ -152,14 +155,32 @@ function setupCharacterSelector() {
     let currentModel;
     function renderPreview() { if (currentModel) scene.remove(currentModel); currentModel = PLAYER_OBJECTS[selectedObjectId].createModel(); currentModel.rotation.x = 0; scene.add(currentModel); }
     function animatePreview() { requestAnimationFrame(animatePreview); if (currentModel) { currentModel.rotation.y += 0.01; currentModel.rotation.x += 0.005; } renderer.render(scene, camera); }
+    
+    // --- MODIFIED ---
     updateCharacterSelectorDisplay = () => {
         const obj = PLAYER_OBJECTS[selectedObjectId];
         document.getElementById('character-name').textContent = obj.name;
         const lockEl = document.getElementById('character-lock');
         const startBtn = document.getElementById('start-button');
-        if (obj.isUnlocked) { lockEl.classList.add('hidden'); startBtn.disabled = false; } else { lockEl.classList.remove('hidden'); lockEl.querySelector('.unlock-text').textContent = `Unlock at Level ${obj.unlockLevel}`; startBtn.disabled = true; }
+        if (obj.isUnlocked) { 
+            lockEl.classList.add('hidden'); 
+            startBtn.disabled = false; 
+        } else { 
+            lockEl.classList.remove('hidden'); 
+            
+            // Check for custom unlock text, otherwise use default
+            if (obj.unlockText) {
+                lockEl.querySelector('.unlock-text').textContent = obj.unlockText;
+            } else {
+                lockEl.querySelector('.unlock-text').textContent = `Unlock at Level ${obj.unlockLevel}`;
+            }
+            
+            startBtn.disabled = true; 
+        }
         renderPreview();
     };
+    // --- END MODIFIED ---
+
     document.getElementById('next-char').addEventListener('click', () => { const i = characterOrder.indexOf(selectedObjectId); selectedObjectId = characterOrder[(i + 1) % characterOrder.length]; updateCharacterSelectorDisplay(); });
     document.getElementById('prev-char').addEventListener('click', () => { const i = characterOrder.indexOf(selectedObjectId); selectedObjectId = characterOrder[(i - 1 + characterOrder.length) % characterOrder.length]; updateCharacterSelectorDisplay(); });
     updateCharacterSelectorDisplay();
@@ -192,6 +213,65 @@ function createAsteroidModel() {
     geo.computeVertexNormals(); const asteroid = new THREE.Mesh(geo, mat); asteroid.castShadow = true; modelGroup.add(asteroid);
     return modelGroup;
 }
+
+// --- NEW/MODIFIED ---
+function createOrbModel() {
+    const modelGroup = new THREE.Group();
+
+    // Shader material from user's example
+    const orbMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            time: { value: 0.0 },
+            color: { value: new THREE.Color(0x00ffff) } // Cyan color
+        },
+        vertexShader: `
+            varying vec2 vUv;
+            varying vec3 vPosition;
+            void main() {
+                vUv = uv;
+                vPosition = position;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform float time;
+            uniform vec3 color;
+            varying vec2 vUv;
+            varying vec3 vPosition;
+
+            void main() {
+                // Swirling pattern using noise-like sin waves
+                float swirl = sin(vUv.x * 10.0 + time * 2.0) * cos(vUv.y * 10.0 + time * 1.5);
+                swirl += sin(vUv.y * 15.0 + time * 3.0) * 0.5;
+                
+                // Glowing effect: radial gradient with swirl modulation
+                float glow = 1.0 - length(vUv - 0.5) * 2.0;
+                glow = max(0.0, glow + swirl * 0.3);
+                glow = pow(glow, 2.0); // Enhance glow
+                
+                // --- MODIFIED --- (Made less translucent)
+                gl_FragColor = vec4(color * glow, glow);
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending, // FIX for "too transparent"
+        side: THREE.DoubleSide
+    });
+
+    // --- MODIFIED --- (Made smaller)
+    const geometry = new THREE.SphereGeometry(0.7, 64, 64);
+    
+    const orb = new THREE.Mesh(geometry, orbMaterial);
+    orb.userData.shaderMaterial = orbMaterial; // Store for animation
+    modelGroup.add(orb);
+
+    // Add point light for extra glow (as in user's example)
+    const pointLight = new THREE.PointLight(0x00ffff, 2, 10);
+    modelGroup.add(pointLight);
+    
+    return modelGroup;
+}
+// --- END NEW/MODIFIED ---
 
 
 function initGame() {
@@ -425,7 +505,19 @@ function initGame() {
           unlockPromptContainer.style.display = 'block';
       }
 
-      player.visualModel.traverse(c=>{if(c.isMesh&&c.material)c.material.color.set(0xd1201b)});
+      // --- MODIFIED --- (Fix crash bug for shader material)
+      player.visualModel.traverse(c => {
+          if (c.isMesh && c.material) {
+              if (c.material.isShaderMaterial) {
+                  // Handle shader material (the orb)
+                  c.material.uniforms.color.value.set(0xd1201b); // Set the color uniform to red
+              } else if (c.material.color) {
+                  // Handle standard materials (rocket, etc.)
+                  c.material.color.set(0xd1201b);
+              }
+          }
+      });
+      // --- END MODIFIED ---
       
       const playAgainBtn=document.createElement('button');
       playAgainBtn.className='restart-button';
@@ -590,6 +682,14 @@ function initGame() {
 
     animationId = requestAnimationFrame(animate);
     player.update(grounds);
+
+    // --- NEW ---
+    // Update orb shader time if it's the current model
+    if (player.visualModel && player.visualModel.userData.shaderMaterial) {
+        player.visualModel.userData.shaderMaterial.uniforms.time.value += 0.05;
+    }
+    // --- END NEW ---
+
     if (isFirstPerson) {
         const fpHeight = player.height * 1.4;
         const forward = new THREE.Vector3(0, 0, -1); 
@@ -692,6 +792,25 @@ function initGame() {
                 setTimeout(()=>uN.classList.remove('show'), 3000);
             }
         }
+
+        // --- NEW ---
+        // Check for Orb Unlock (from Level 3)
+        // Using 1000 as the score, as requested
+        if (selectedLevel === 3 && !PLAYER_OBJECTS['orb'].isUnlocked && gameState.score >= 1000) {
+            PLAYER_OBJECTS['orb'].isUnlocked = true;
+            const unlocked = JSON.parse(localStorage.getItem('spaceRunnerUnlocks')) || ['rocket'];
+            if (!unlocked.includes('orb')) { 
+                unlocked.push('orb');
+                localStorage.setItem('spaceRunnerUnlocks', JSON.stringify(unlocked));
+            }
+            gameState.newlyUnlockedCharacterId = 'orb'; 
+            
+            const uN=document.getElementById('unlock-notification');
+            uN.innerHTML=`New Vehicle Unlocked:<br/><strong>${PLAYER_OBJECTS['orb'].name}</strong>`;
+            uN.classList.add('show');
+            setTimeout(()=>uN.classList.remove('show'), 3000);
+        }
+        // --- END NEW ---
         
         // --- Level 3 Progression ---
         if (selectedLevel === 3) {
