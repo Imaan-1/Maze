@@ -681,6 +681,7 @@ function initGame() {
       if(gameState.isGameOver)return;
       gameState.isGameOver=true;
       
+      playSound('crash'); // Play crash SFX once only
       pauseButton.style.display = 'none'; // NEW
       pauseScreen.style.display = 'none'; // NEW
       isPaused = false; // NEW
@@ -824,7 +825,31 @@ function initGame() {
     updateLevelSelectorUI(); 
   }
   
-  window.addEventListener('keydown',e=>{switch(e.code){case'KeyA':keys.a.pressed=true;break;case'KeyD':keys.d.pressed=true;break;case'Space':if(player&&player.onGround)player.velocity.y=.12;break;case'KeyR':if(gameState.isGameOver)resetGame();break;case'KeyP':togglePause(!isPaused);break;}}); // Added 'P' to pause
+  // --- GAMEPLAY SOUND HOOKS ---
+  // (Fix jump and crash SFX triggers, ensure handlers are not duplicated and are inside initGame scope)
+  window.addEventListener('keydown', e => {
+      switch(e.code){
+          case 'KeyA':
+              keys.a.pressed = true;
+              break;
+          case 'KeyD':
+              keys.d.pressed = true;
+              break;
+          case 'Space':
+              if(player && player.onGround){
+                  playSound('jump'); // Play jump SFX right when player jumps
+                  player.velocity.y=.12;
+              }
+              break;
+          case 'KeyR':
+              if(gameState.isGameOver)resetGame();
+              break;
+          case 'KeyP':
+              togglePause(!isPaused);
+              break;
+      }
+  });
+
   window.addEventListener('keyup',e=>{switch(e.code){case'KeyA':keys.a.pressed=false;break;case'KeyD':keys.d.pressed=false;break}});
   window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight)});
   window.addEventListener('keydown', e => {
@@ -1133,3 +1158,40 @@ function initGame() {
     renderer.render(scene, camera);
   }
 }
+
+// ---- SOUND EFFECT SYSTEM ----
+const audio = {
+    bgm: new Audio('sounds/invasion-march-star-wars-style-cinematic-music-219585.mp3'),             // Background music
+    jump: new Audio('sounds/jump.wav'),                                  // Jump sound
+    crash: new Audio('sounds/dying.mp3'),                                // Crash/Death sound
+    click: new Audio('sounds/buttonclick.mp3'),                          // Menu/button click sound
+};
+
+audio.bgm.loop = true;
+audio.bgm.volume = 0.14; // Softer background (was 0.3)
+
+audio.jump.volume = 1.0;  // Louder jump
+
+// Attempt to boost dying.mp3 volume also programmatically on each play for compatibility
+function playSound(s) {
+    if (!audio[s]) return;
+    if (s === 'crash') {
+        audio.crash.volume = 1.0; // Louder crash/death
+    }
+    audio[s].currentTime = 0; // rewind to start
+    audio[s].play();
+}
+
+// --- PLAY BGM on menu load, and ensure it continues ---
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        audio.bgm.play().catch(()=>{}); // Autoplay issues handled gently
+    }, 700);
+});
+
+// --- MENU BUTTON CLICK SOUNDS ---
+document.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') {
+        playSound('click');
+    }
+});
