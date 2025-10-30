@@ -48,6 +48,11 @@
           <p id="unlock-level-3-info" class="hidden">Reach a score of 1000 in Level 2 to unlock Level 3.</p>
         </div>
 
+        <div class="menu-navigation">
+            <button id="quests-btn" class="menu-nav-btn">📜 QUESTS</button>
+            <button id="shop-btn" class="menu-nav-btn">🛒 SHOP</button>
+        </div>
+
         <div id="level-page-buttons">
             <button id="choose-char-button" class="action-button primary-button">CHOOSE CHARACTER</button>
         </div>
@@ -55,8 +60,8 @@
     </div>
 
     <div id="characterSelectionScreen" class="menuScreen">
-        <div class="menu-content menu-content-large">
-            <h2 class="section-title">CHOOSE YOUR CHARACTER</h2>
+        <div class="menu-content menu-content-large char-select-modern">
+            <h2 class="section-title char-select-title">CHOOSE YOUR SHIP</h2>
 
             <div id="character-selection-group">
                 <button id="prev-char" class="char-arrow">◀</button>
@@ -65,15 +70,12 @@
                     <div id="lock-overlay" class="hidden">
                         <span class="lock-icon-large">🔒</span>
                     </div>
-                    </div>
+                </div>
                 <button id="next-char" class="char-arrow">▶</button>
             </div>
 
             <div id="char-info-box">
-                <div id="char-name-status">
-                    <div id="character-name" class="main-char-name">Galaxy Cruiser</div>
-                    <div id="character-status" class="unlocked-text hidden">UNLOCKED!</div>
-                </div>
+                <div id="character-name" class="main-char-name">Galaxy Cruiser</div>
                 
                 <div id="unlock-notification-char-select" class="unlock-message-box hidden">
                     <p>New Vehicle Unlocked!</p>
@@ -86,16 +88,16 @@
                     <span class="unlock-text">Unlock at Level 2</span>
                 </div>
             </div>
-            <button id="next-char" class="char-arrow">▶</button>
-        </div>
         
-        <button id="start-button" class="start-button">
-          🎮 START MISSION
-        </button>
-        <div class="game-info">
-          <p><strong>🎯Controls:</strong> A/D to move • SPACE to jump • Q for special power (Planet only) • V to switch viewpoints🎯</p>
+            <div class="char-select-buttons">
+                <button id="start-button" class="start-button-modern">
+                  🎮 START MISSION
+                </button>
+                <button id="back-to-levels-btn" class="back-to-levels-btn">
+                  ◀ BACK TO LEVELS
+                </button>
+            </div>
         </div>
-      </div>
     </div>
 
     <div id="gameScreen">
@@ -131,6 +133,32 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Quest Complete Shooting Star Notification -->
+    <div id="quest-complete-notification" class="quest-complete-star">
+        <span class="star-icon">⭐</span>
+        <span class="quest-complete-text">Quest Complete!</span>
+    </div>
+
+    <!-- QUESTS SCREEN (Modal) -->
+    <div id="questsScreen" class="modal-screen">
+        <div class="modal-content">
+            <h2 class="modal-title">📜 DAILY QUESTS</h2>
+            <div id="quest-list-container"></div>
+            <button id="close-quests-btn" class="close-modal-btn">BACK</button>
+        </div>
+    </div>
+
+    <!-- SHOP SCREEN (Modal) -->
+    <div id="shopScreen" class="modal-screen">
+        <div class="modal-content">
+            <h2 class="modal-title">🛒 GALACTIC SHOP</h2>
+            <div id="stars-display" class="stars-display">⭐ Stars: <span id="stars-count">0</span></div>
+            <div id="equipped-info" style="margin-bottom: 20px;"></div>
+            <div id="shop-items-container"></div>
+            <button id="close-shop-btn" class="close-modal-btn">BACK</button>
+        </div>
     </div>
 
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>

@@ -132,6 +132,188 @@ if (savedHighScores) {
     highScores = { ...highScores, ...savedHighScores };
 }
 
+// ---- QUEST & REWARD SYSTEM DATA ----
+const QUEST_TYPES = [
+    {
+        name: 'Jump X times in one run',
+        key: 'jump',
+        min: 3, max: 8,
+        runOnly: true,
+        checker: progress => progress.jumps >= progress.target,
+        progressText: progress => `Jumps: ${progress.jumps} / ${progress.target}`,
+        reward: 10,
+    },
+    {
+        name: 'Survive Y points in one run',
+        key: 'score',
+        min: 100, max: 500,
+        runOnly: true,
+        checker: progress => progress.score >= progress.target,
+        progressText: progress => `Score: ${progress.score} / ${progress.target}`,
+        reward: 10,
+    },
+    {
+        name: 'Don\'t crash more than Z times in 5 runs',
+        key: 'deaths',
+        min: 3, max: 5,
+        runOnly: false,
+        checker: progress => progress.deaths <= progress.target,
+        progressText: progress => `Deaths: ${progress.deaths} / ${progress.target}`,
+        reward: 10,
+    },
+];
+
+function getRandomQuests(n = 3) {
+    const chosen = [];
+    const used = new Set();
+    while (chosen.length < n && used.size < QUEST_TYPES.length) {
+        const i = Math.floor(Math.random() * QUEST_TYPES.length);
+        if (!used.has(i)) { 
+            used.add(i); 
+            const qt = QUEST_TYPES[i];
+            const target = Math.floor(Math.random() * (qt.max - qt.min + 1)) + qt.min;
+            const questData = { 
+                ...qt, 
+                target, 
+                done: false,
+                jumps: 0,
+                score: 0,
+                deaths: 0
+            };
+            chosen.push(questData);
+        }
+    }
+    return chosen;
+}
+
+function loadDailyQuests() {
+    let quests = JSON.parse(localStorage.getItem('spaceRunnerQuests'));
+    let lastDay = localStorage.getItem('spaceRunnerQuestDay');
+    const nowDay = new Date().toDateString();
+    if (!quests || lastDay !== nowDay) {
+        quests = getRandomQuests();
+        localStorage.setItem('spaceRunnerQuests', JSON.stringify(quests));
+        localStorage.setItem('spaceRunnerQuestDay', nowDay);
+        localStorage.setItem('spaceRunnerQuestRun', JSON.stringify({ jumps:0, deaths:0, completed:false }));
+    } else {
+        quests = quests.map(q => {
+            const questType = QUEST_TYPES.find(qt => qt.key === q.key);
+            if (questType) {
+                return { ...q, ...questType };
+            }
+            return q;
+        });
+    }
+    return quests;
+}
+
+function saveDailyQuests(quests) {
+    localStorage.setItem('spaceRunnerQuests', JSON.stringify(quests));
+}
+
+let dailyQuests = loadDailyQuests();
+
+// ---- DEBUG HELPERS (accessible from browser console) ----
+window.resetQuests = function() {
+    localStorage.removeItem('spaceRunnerQuests');
+    localStorage.removeItem('spaceRunnerQuestDay');
+    localStorage.removeItem('spaceRunnerQuestRewarded');
+    console.log('Quests reset! Reload the page to get new quests.');
+};
+
+window.addStars = function(amount) {
+    const stars = parseInt(localStorage.getItem('spaceRunnerStars') || '0', 10);
+    localStorage.setItem('spaceRunnerStars', String(stars + amount));
+    console.log(`Added ${amount} stars. New total: ${stars + amount}`);
+};
+
+window.checkQuests = function() {
+    console.log('Current Quests:', dailyQuests);
+    console.log('Current Stars:', localStorage.getItem('spaceRunnerStars'));
+};
+
+// ---- SHOP SYSTEM DATA ----
+const SHOP_ITEMS = [
+    {
+        id: 'nebula_skin',
+        name: 'Nebula Cruiser',
+        icon: '🌌',
+        price: 50,
+        type: 'skin',
+        description: 'A cosmic purple skin for Galaxy Cruiser',
+        basedOn: 'rocket',
+        color: 0x9333ea,
+        trailColor: 0xc084fc
+    },
+    {
+        id: 'fire_skin',
+        name: 'Inferno Rocket',
+        icon: '🔥',
+        price: 75,
+        type: 'skin',
+        description: 'A fiery red skin for Galaxy Cruiser',
+        basedOn: 'rocket',
+        color: 0xff3333,
+        trailColor: 0xff6b00
+    },
+    {
+        id: 'ice_asteroid',
+        name: 'Frozen Comet',
+        icon: '❄️',
+        price: 100,
+        type: 'character',
+        description: 'Exclusive icy variant of Rogue Asteroid',
+        basedOn: 'asteroid',
+        color: 0x7dd3fc,
+        trailColor: 0xbfdbfe
+    },
+];
+
+function loadShopPurchases() {
+    return JSON.parse(localStorage.getItem('spaceRunnerShopPurchases')) || [];
+}
+
+function saveShopPurchases(purchases) {
+    localStorage.setItem('spaceRunnerShopPurchases', JSON.stringify(purchases));
+}
+
+let shopPurchases = loadShopPurchases();
+
+function getEquippedSkin() {
+    return localStorage.getItem('spaceRunnerEquippedSkin') || null;
+}
+
+function setEquippedSkin(skinId) {
+    if (skinId) {
+        localStorage.setItem('spaceRunnerEquippedSkin', skinId);
+    } else {
+        localStorage.removeItem('spaceRunnerEquippedSkin');
+    }
+}
+
+let equippedSkin = getEquippedSkin();
+
+// ---- SOUND EFFECT SYSTEM ----
+const audio = {
+    bgm: new Audio('sounds/invasion-march-star-wars-style-cinematic-music-219585.mp3'),
+    jump: new Audio('sounds/jump.wav'),
+    crash: new Audio('sounds/dying.mp3'),
+    click: new Audio('sounds/buttonclick.mp3'),
+};
+
+audio.bgm.loop = true;
+audio.bgm.volume = 0.14;
+audio.jump.volume = 1.0;
+
+function playSound(s) {
+    if (!audio[s]) return;
+    if (s === 'crash') {
+        audio.crash.volume = 1.0;
+    }
+    audio[s].currentTime = 0;
+    audio[s].play();
+}
+
 // --- INITIAL SETUP & GLOBAL FUNCTIONS ---
 
 loadTextures(() => {
@@ -147,6 +329,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 700);
 });
 
+// --- MENU BUTTON CLICK SOUNDS ---
 document.addEventListener('click', (e) => {
     if (e.target.tagName === 'BUTTON' || e.target.classList.contains('level-select-btn')) {
         playSound('click');
@@ -208,21 +391,19 @@ function setupMenu() {
         showScreen('characterSelectionScreen');
         updateCharacterSelectorDisplay(); // Ensure the character selector updates
     });
-    
-    document.getElementById('back-to-level-button').addEventListener('click', () => {
-        showScreen('levelSelectionScreen');
-    });
 
     // Start mission button on the character screen
-    document.getElementById('start-mission-button-char').addEventListener('click', () => {
+    document.getElementById('start-button').addEventListener('click', () => {
         const obj = PLAYER_OBJECTS[selectedObjectId];
         if (obj.isUnlocked) {
             if (startGame) startGame();
         }
     });
-
-    // Select button on the character screen just sets the character (if unlocked)
-    // Removed event listener for removed button (handled in HTML)
+    
+    // Back to levels button on character screen
+    document.getElementById('back-to-levels-btn').addEventListener('click', () => {
+        showScreen('levelSelectionScreen');
+    });
     
     // --- Level Selection Logic ---
     const levelBtns = {
@@ -249,7 +430,10 @@ function setupMenu() {
         }
 
         // Update the Start Mission button text on the char screen to reflect the selected level
-        document.getElementById('start-mission-button-char').textContent = `START LEVEL ${selectedLevel}`;
+        const startBtn = document.getElementById('start-button');
+        if (startBtn) {
+            startBtn.textContent = `🎮 START LEVEL ${selectedLevel}`;
+        }
 
         const unlock2Info = document.getElementById('unlock-level-2-info');
         const unlock3Info = document.getElementById('unlock-level-3-info');
@@ -293,27 +477,92 @@ function setupMenu() {
 }
 function setupCharacterSelector() {
     const previewCanvas = document.getElementById('character-preview');
-    // Ensure canvas size is set for 3D rendering
-    previewCanvas.width = 200; 
-    previewCanvas.height = 200;
+    
+    // Wait a moment for CSS to apply, then get size
+    setTimeout(() => {
+        const computedStyle = window.getComputedStyle(previewCanvas);
+        const canvasWidth = parseInt(computedStyle.width) || 300;
+        const canvasHeight = parseInt(computedStyle.height) || 300;
+        const canvasSize = Math.min(canvasWidth, canvasHeight);
+        
+        // Set canvas rendering size
+        previewCanvas.width = canvasSize; 
+        previewCanvas.height = canvasSize;
+        
+        if (renderer) {
+            renderer.setSize(canvasSize, canvasSize);
+            renderPreview();
+        }
+    }, 100);
+    
+    // Initial size
+    previewCanvas.width = 300; 
+    previewCanvas.height = 300;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, previewCanvas.width / previewCanvas.height, 0.1, 1000);
-    camera.position.z = 2.5;
-    const renderer = new THREE.WebGLRenderer({ canvas: previewCanvas, alpha: true, antialias: true });
-    renderer.setSize(previewCanvas.width, previewCanvas.height);
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); scene.add(ambientLight);
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1); keyLight.position.set(-1, 1, 3); scene.add(keyLight);
+    scene.background = null; // Transparent background for the scene
+    
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    camera.position.set(0, 0, 2.5);
+    camera.lookAt(0, 0, 0);
+    
+    const renderer = new THREE.WebGLRenderer({ 
+        canvas: previewCanvas, 
+        alpha: true, 
+        antialias: true,
+        preserveDrawingBuffer: true 
+    });
+    renderer.setClearColor(0x000000, 0); // Transparent clear color
+    renderer.setSize(300, 300);
+    
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); 
+    scene.add(ambientLight);
+    
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.5); 
+    keyLight.position.set(2, 2, 3); 
+    scene.add(keyLight);
+    
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.5); 
+    fillLight.position.set(-2, 0, -1); 
+    scene.add(fillLight);
+    
     let currentModel;
+    
+    console.log('Character selector initialized');
     
     // FIX: Character preview rendering logic
     function renderPreview() { 
-        if (!allTexturesLoaded) return; 
-        if (currentModel) scene.remove(currentModel); 
-        currentModel = PLAYER_OBJECTS[selectedObjectId].createModel(); 
-        currentModel.rotation.x = 0; 
+        if (!allTexturesLoaded) {
+            console.log('Textures not loaded yet');
+            return; 
+        }
+        // Remove old model completely
+        if (currentModel) {
+            scene.remove(currentModel);
+            // Dispose of geometries and materials to free memory
+            currentModel.traverse((child) => {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(material => material.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+            });
+            currentModel = null;
+        }
+        
+        // Create new model for the selected character
+        const characterObj = PLAYER_OBJECTS[selectedObjectId];
+        console.log('Creating model for:', selectedObjectId, characterObj);
+        
+        currentModel = characterObj.createModel(); 
+        currentModel.rotation.x = 0;
+        currentModel.position.set(0, 0, 0);
         scene.add(currentModel); 
         renderer.render(scene, camera); // Render once immediately
+        console.log('Character rendered:', selectedObjectId, currentModel);
     }
     
     function animatePreview() { 
@@ -339,7 +588,7 @@ function setupCharacterSelector() {
         
         const lockEl = document.getElementById('character-lock');
         const statusEl = document.getElementById('character-status');
-        const startBtn = document.getElementById('start-mission-button-char');
+        const startBtn = document.getElementById('start-button');
         const previewEl = document.getElementById('character-preview');
         const lockOverlayEl = document.getElementById('lock-overlay'); // NEW: Get the overlay
         
@@ -388,8 +637,16 @@ function setupCharacterSelector() {
         updateCharacterSelectorDisplay(); 
     });
 
+    // Force initial render after a short delay
+    setTimeout(() => {
+        console.log('Force initial render');
+        renderPreview();
+    }, 500);
+    
     updateCharacterSelectorDisplay();
     animatePreview();
+    
+    console.log('Character selector setup complete');
 }
 
 // --- 3D MODEL CREATION FUNCTIONS (NO CHANGES) ---
@@ -721,7 +978,10 @@ function initGame() {
       gameState.newlyUnlockedLevel = null; 
       gameState.singularityUsed = false;
       gameState.highScoreNotified = false; 
-      gameState.startingHighScore = highScores[selectedLevel]; 
+      gameState.startingHighScore = highScores[selectedLevel];
+      
+      // Reset run-only quest progress
+      resetQuestProgressForRun(); 
       
       // --- MODIFICATION: Speeds adjusted to be even slower ---
       switch(selectedLevel) {
@@ -821,6 +1081,11 @@ function initGame() {
       gameState.isGameOver=true;
       
       playSound('crash'); // Play crash SFX once only
+      
+      // Track quest progress for death and score
+      updateQuestProgress('deaths');
+      updateQuestProgress('score', gameState.score);
+      
       pauseButton.style.display = 'none'; // NEW
       pauseScreen.style.display = 'none'; // NEW
       isPaused = false; // NEW
@@ -1308,39 +1573,266 @@ function initGame() {
   }
 }
 
-// ---- SOUND EFFECT SYSTEM ----
-const audio = {
-    bgm: new Audio('sounds/invasion-march-star-wars-style-cinematic-music-219585.mp3'),             // Background music
-    jump: new Audio('sounds/jump.wav'),                                  // Jump sound
-    crash: new Audio('sounds/dying.mp3'),                                // Crash/Death sound
-    click: new Audio('sounds/buttonclick.mp3'),                          // Menu/button click sound
-};
-
-audio.bgm.loop = true;
-audio.bgm.volume = 0.14; // Softer background (was 0.3)
-
-audio.jump.volume = 1.0;  // Louder jump
-
-// Attempt to boost dying.mp3 volume also programmatically on each play for compatibility
-function playSound(s) {
-    if (!audio[s]) return;
-    if (s === 'crash') {
-        audio.crash.volume = 1.0; // Louder crash/death
-    }
-    audio[s].currentTime = 0; // rewind to start
-    audio[s].play();
+// ---- QUESTS & SHOP UI SETUP ----
+function setupQuestsAndShop() {
+    document.getElementById('quests-btn').addEventListener('click', () => {
+        document.getElementById('questsScreen').style.display = 'flex';
+        renderQuestScreen();
+    });
+    
+    document.getElementById('close-quests-btn').addEventListener('click', () => {
+        document.getElementById('questsScreen').style.display = 'none';
+    });
+    
+    document.getElementById('shop-btn').addEventListener('click', () => {
+        document.getElementById('shopScreen').style.display = 'flex';
+        renderShopScreen();
+    });
+    
+    document.getElementById('close-shop-btn').addEventListener('click', () => {
+        document.getElementById('shopScreen').style.display = 'none';
+    });
 }
 
-// --- PLAY BGM on menu load, and ensure it continues ---
-window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        audio.bgm.play().catch(()=>{}); // Autoplay issues handled gently
-    }, 700);
-});
-
-// --- MENU BUTTON CLICK SOUNDS ---
-document.addEventListener('click', (e) => {
-    if (e.target.tagName === 'BUTTON') {
-        playSound('click');
+function renderQuestScreen() {
+    const quests = dailyQuests;
+    const container = document.getElementById('quest-list-container');
+    if (!container) return;
+    
+    let html = '';
+    let completedAll = true;
+    let unclaimedStars = 0;
+    let hasUnclaimedQuests = false;
+    
+    quests.forEach(q => {
+        const questClass = q.done ? 'quest-item completed' : 'quest-item';
+        const isClaimed = q.claimed !== false;
+        
+        html += `<div class="${questClass}">`;
+        html += `<div class="quest-title">${q.name.replace(/ X | Y | Z /g, ` ${q.target} `)}</div>`;
+        html += `<div class="quest-progress">${q.progressText(q)}</div>`;
+        if (q.done) {
+            if (isClaimed) {
+                html += `<div class="quest-completed-badge">✓ CLAIMED (+${q.reward} ⭐)</div>`;
+            } else {
+                html += `<div class="quest-completed-badge" style="background: linear-gradient(45deg, #fbbf24, #f59e0b);">⭐ READY TO CLAIM (+${q.reward} ⭐)</div>`;
+                unclaimedStars += q.reward;
+                hasUnclaimedQuests = true;
+            }
+        }
+        html += `</div>`;
+        if (!q.done) completedAll = false;
+    });
+    
+    if (completedAll && !localStorage.getItem('spaceRunnerQuestRewarded')) {
+        unclaimedStars += 30;
     }
-});
+    
+    if (hasUnclaimedQuests || (completedAll && !localStorage.getItem('spaceRunnerQuestRewarded'))) {
+        html += `<div class="unclaimed-stars-info">💫 Unclaimed Rewards: ${unclaimedStars} Stars</div>`;
+        html += `<button class="claim-rewards-btn" onclick="claimQuestRewards()">✨ CLAIM ${unclaimedStars} STARS ✨</button>`;
+    } else if (completedAll && localStorage.getItem('spaceRunnerQuestRewarded')) {
+        html += `<div class="quest-reward-info">✅ All daily quests completed! New quests available tomorrow.</div>`;
+    } else {
+        html += `<div class="quest-reward-info">Complete quests to earn stars!</div>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+window.claimQuestRewards = function() {
+    let totalStars = 0;
+    
+    dailyQuests.forEach(q => {
+        if (q.done && q.claimed === false) {
+            totalStars += q.reward;
+            q.claimed = true;
+        }
+    });
+    
+    const allDone = dailyQuests.every(q => q.done);
+    if (allDone && !localStorage.getItem('spaceRunnerQuestRewarded')) {
+        totalStars += 30;
+        localStorage.setItem('spaceRunnerQuestRewarded', 'yes');
+    }
+    
+    const currentStars = parseInt(localStorage.getItem('spaceRunnerStars') || '0', 10);
+    localStorage.setItem('spaceRunnerStars', String(currentStars + totalStars));
+    
+    saveDailyQuests(dailyQuests);
+    renderQuestScreen();
+    playSound('click');
+    
+    console.log(`Claimed ${totalStars} stars! New total: ${currentStars + totalStars}`);
+};
+
+function renderShopScreen() {
+    const stars = parseInt(localStorage.getItem('spaceRunnerStars') || '0', 10);
+    document.getElementById('stars-count').textContent = stars;
+    
+    const equippedInfoDiv = document.getElementById('equipped-info');
+    if (equippedInfoDiv) {
+        if (equippedSkin) {
+            const equippedItem = SHOP_ITEMS.find(item => item.id === equippedSkin);
+            if (equippedItem) {
+                equippedInfoDiv.innerHTML = `
+                    <div style="background: rgba(34, 197, 94, 0.1); border: 2px solid #22c55e; padding: 12px; border-radius: 10px;">
+                        <div style="color: #22c55e; font-weight: bold; margin-bottom: 8px;">Currently Equipped: ${equippedItem.icon} ${equippedItem.name}</div>
+                        <button class="shop-buy-btn" style="background: linear-gradient(45deg, #f59e0b, #ef4444); font-size: 0.9rem; padding: 8px 20px;" onclick="unequipSkin()">REMOVE SKIN</button>
+                    </div>
+                `;
+            }
+        } else {
+            equippedInfoDiv.innerHTML = '<div style="color: #9ca3af; font-size: 0.95rem;">No skin equipped (using default appearance)</div>';
+        }
+    }
+    
+    const container = document.getElementById('shop-items-container');
+    if (!container) return;
+    
+    let html = '';
+    
+    SHOP_ITEMS.forEach(item => {
+        const owned = shopPurchases.includes(item.id);
+        const isEquipped = equippedSkin === item.id;
+        const itemClass = owned ? 'shop-item owned' : 'shop-item';
+        
+        html += `<div class="${itemClass}">`;
+        html += `<div class="shop-item-icon">${item.icon}</div>`;
+        html += `<div class="shop-item-name">${item.name}</div>`;
+        html += `<div class="shop-item-price">⭐ ${item.price}</div>`;
+        
+        if (owned) {
+            if (isEquipped) {
+                html += `<div class="shop-owned-badge" style="background: linear-gradient(45deg, #22c55e, #10b981);">✓ EQUIPPED</div>`;
+            } else {
+                html += `<button class="shop-buy-btn" style="background: linear-gradient(45deg, #3b82f6, #60a5fa);" onclick="equipShopItem('${item.id}')">EQUIP</button>`;
+            }
+        } else {
+            const canAfford = stars >= item.price;
+            const btnDisabled = canAfford ? '' : 'disabled';
+            html += `<button class="shop-buy-btn" ${btnDisabled} onclick="buyShopItem('${item.id}')">BUY</button>`;
+        }
+        
+        html += `</div>`;
+    });
+    
+    if (SHOP_ITEMS.length === 0) {
+        html = '<p style="color: #e5e7eb;">No items available yet. Check back soon!</p>';
+    }
+    
+    container.innerHTML = html;
+}
+
+window.buyShopItem = function(itemId) {
+    const item = SHOP_ITEMS.find(i => i.id === itemId);
+    if (!item) return;
+    
+    const stars = parseInt(localStorage.getItem('spaceRunnerStars') || '0', 10);
+    
+    if (stars < item.price) {
+        alert('Not enough stars!');
+        return;
+    }
+    
+    if (shopPurchases.includes(itemId)) {
+        alert('Already owned!');
+        return;
+    }
+    
+    localStorage.setItem('spaceRunnerStars', String(stars - item.price));
+    shopPurchases.push(itemId);
+    saveShopPurchases(shopPurchases);
+    renderShopScreen();
+    playSound('click');
+    alert(`Purchased ${item.name}! You can now equip it.`);
+};
+
+window.equipShopItem = function(itemId) {
+    const item = SHOP_ITEMS.find(i => i.id === itemId);
+    if (!item) return;
+    
+    if (!shopPurchases.includes(itemId)) {
+        alert('You must purchase this item first!');
+        return;
+    }
+    
+    equippedSkin = itemId;
+    setEquippedSkin(itemId);
+    renderShopScreen();
+    playSound('click');
+    console.log(`Equipped: ${item.name}`);
+};
+
+window.unequipSkin = function() {
+    equippedSkin = null;
+    setEquippedSkin(null);
+    renderShopScreen();
+    playSound('click');
+    console.log('Skin removed - using default appearance');
+};
+
+// ---- QUEST PROGRESS UPDATE HOOKS ----
+function updateQuestProgress(type, value) {
+    let newlyCompleted = false;
+    dailyQuests.forEach(q => {
+        if (q.key === type && !q.done) {
+            const wasDone = q.done;
+            if (type === 'jump') {
+                q.jumps = (q.jumps || 0) + 1;
+                if (q.jumps >= q.target) {
+                    q.done = true;
+                }
+            } else if (type === 'score') {
+                q.score = Math.max(q.score || 0, value);
+                if (q.score >= q.target) {
+                    q.done = true;
+                }
+            } else if (type === 'deaths') {
+                q.deaths = (q.deaths || 0) + 1;
+                if (q.deaths <= q.target) {
+                    q.done = true;
+                }
+            }
+            
+            if (!wasDone && q.done) {
+                newlyCompleted = true;
+                q.claimed = false;
+                console.log(`Quest completed! Claim your ${q.reward} stars in the Quests menu!`);
+                showQuestCompleteNotification();
+            }
+        }
+    });
+    
+    if (newlyCompleted) {
+        const allDone = dailyQuests.every(q => q.done);
+        if (allDone && !localStorage.getItem('spaceRunnerQuestRewarded')) {
+            console.log('All quests completed! Claim your +30 bonus stars!');
+        }
+    }
+    
+    saveDailyQuests(dailyQuests);
+}
+
+function showQuestCompleteNotification() {
+    const notification = document.getElementById('quest-complete-notification');
+    if (!notification) return;
+    
+    notification.classList.remove('shooting');
+    void notification.offsetWidth;
+    notification.classList.add('shooting');
+    
+    setTimeout(() => {
+        notification.classList.remove('shooting');
+    }, 2000);
+}
+
+function resetQuestProgressForRun() {
+    dailyQuests.forEach(q => {
+        if (q.runOnly && !q.done) {
+            q.jumps = 0;
+            q.score = 0;
+        }
+    });
+    saveDailyQuests(dailyQuests);
+}
