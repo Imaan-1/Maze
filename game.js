@@ -44,7 +44,7 @@ function loadTextures(callback) {
     });
 }
 
-// --- CHARACTER DEFINITIONS ---
+// --- CHARACTER DEFINITIONS (Hyper Cube added back, trail color is less intense) ---
 const PLAYER_OBJECTS = {
     rocket: { 
         name: "Galaxy Cruiser", 
@@ -90,10 +90,23 @@ const PLAYER_OBJECTS = {
         trailSize: 0.15, 
         trailMaterial: null,
         textures: {}
+    },
+    // --- NEW CHARACTER ADDED BACK ---
+    hypercube: { 
+        name: "Hyper Cube", 
+        isUnlocked: false, 
+        unlockLevel: 3, 
+        createModel: createHyperCubeModel, 
+        colliderSize: { width: 1.2, height: 1.2, depth: 1.2 }, 
+        unlockText: "Score 2000 in Level 3", 
+        trailColor: 0x66ff66, // LESS INTENSE NEON GREEN
+        trailSize: 0.2, 
+        trailMaterial: null,
+        textures: {}
     }
 };
 let selectedObjectId = 'rocket';
-const characterOrder = ['rocket', 'asteroid', 'planet', 'orb'];
+const characterOrder = ['rocket', 'asteroid', 'planet', 'orb', 'hypercube'];
 
 // --- Level State Management (NO CHANGES) ---
 let selectedLevel = 1;
@@ -119,6 +132,26 @@ if (savedHighScores) {
     highScores = { ...highScores, ...savedHighScores };
 }
 
+// ---- SOUND EFFECT SYSTEM ----
+const audio = {
+    bgm: new Audio('sounds/invasion-march-star-wars-style-cinematic-music-219585.mp3'),
+    jump: new Audio('sounds/jump.wav'),
+    crash: new Audio('sounds/dying.mp3'),
+    click: new Audio('sounds/buttonclick.mp3'),
+};
+
+audio.bgm.loop = true;
+audio.bgm.volume = 0.14; 
+
+function playSound(s) {
+    if (!audio[s]) return;
+    if (s === 'crash') {
+        audio.crash.volume = 1.0; 
+    }
+    audio[s].currentTime = 0; 
+    audio[s].play().catch(e => console.log("Sound play prevented:", e));
+}
+
 // --- INITIAL SETUP & GLOBAL FUNCTIONS ---
 
 loadTextures(() => {
@@ -127,7 +160,20 @@ loadTextures(() => {
     initGame(); 
 });
 
-// --- MENU & CHARACTER SELECTOR LOGIC ---
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        audio.bgm.play().catch(()=>{}); 
+    }, 700);
+});
+
+document.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON' || e.target.classList.contains('level-select-btn')) {
+        playSound('click');
+    }
+});
+
+// --- MENU & CHARACTER SELECTOR LOGIC (MODIFIED for 2-page structure) ---
+
 function createStarfield() {
     const starfield = document.getElementById('starfield');
     if (!starfield || starfield.children.length > 0) return;
@@ -156,11 +202,19 @@ function createStarfield() {
     };
     setInterval(createShootingStar, 2000);
 }
+
+// NEW: Function to manage screen transitions
+function showScreen(id) {
+    document.querySelectorAll('.menuScreen').forEach(screen => {
+        screen.classList.remove('active');
+    });
+    document.getElementById(id).classList.add('active');
+}
+
 function setupMenu() {
     createStarfield();
-    document.getElementById('start-button').addEventListener('click', () => {
-        if (startGame) startGame();
-    });
+    
+    // --- Mouse Parallax Effect ---
     const starfield = document.getElementById('starfield');
     window.addEventListener('mousemove', (e) => {
         const xRatio = (e.clientX - window.innerWidth / 2) / window.innerWidth;
@@ -168,45 +222,70 @@ function setupMenu() {
         starfield.style.transform = `translate(${xRatio * -30}px, ${yRatio * -30}px)`;
     });
 
+    // --- BUTTON EVENT LISTENERS (NEW LOGIC) ---
+    document.getElementById('choose-char-button').addEventListener('click', () => {
+        showScreen('characterSelectionScreen');
+        updateCharacterSelectorDisplay(); // Ensure the character selector updates
+    });
+    
+    document.getElementById('back-to-level-button').addEventListener('click', () => {
+        showScreen('levelSelectionScreen');
+    });
+
+    // Start mission button on the character screen
+    document.getElementById('start-mission-button-char').addEventListener('click', () => {
+        const obj = PLAYER_OBJECTS[selectedObjectId];
+        if (obj.isUnlocked) {
+            if (startGame) startGame();
+        }
+    });
+
+    // Select button on the character screen just sets the character (if unlocked)
+    // Removed event listener for removed button (handled in HTML)
+    
+    // --- Level Selection Logic ---
     const levelBtns = {
         1: document.getElementById('level-1-btn'),
         2: document.getElementById('level-2-btn'),
         3: document.getElementById('level-3-btn')
     };
     
-    // --- THIS FUNCTION IS UPDATED ---
     updateLevelSelectorUI = () => {
         for (const [level, btn] of Object.entries(levelBtns)) {
-            if (unlockedLevels[level]) {
+            const levelNum = parseInt(level);
+            if (unlockedLevels[levelNum]) {
                 btn.disabled = false;
-                btn.innerHTML = `Level ${level}`;
+                btn.innerHTML = `LEVEL ${levelNum}: ${getLevelName(levelNum)}`;
             } else {
                 btn.disabled = true;
-                btn.innerHTML = `Level ${level} <span>🔒</span>`;
+                btn.innerHTML = `LEVEL ${levelNum}: ${getLevelName(levelNum)} <span>🔒</span>`;
             }
-            if (level == selectedLevel) {
+            if (levelNum === selectedLevel) {
                 btn.classList.add('selected');
             } else {
                 btn.classList.remove('selected');
             }
         }
 
+        // Update the Start Mission button text on the char screen to reflect the selected level
+        document.getElementById('start-mission-button-char').textContent = `START LEVEL ${selectedLevel}`;
+
         const unlock2Info = document.getElementById('unlock-level-2-info');
         const unlock3Info = document.getElementById('unlock-level-3-info');
         const unlockContainer = document.getElementById('unlock-info-container');
 
-        // Hide Level 2 unlock text if Level 2 is unlocked
+        // Show/Hide Level 2 unlock text
         if (unlockedLevels[2]) {
             unlock2Info.classList.add('hidden');
         } else {
-            unlock2Info.classList.remove('hidden'); // Show if not unlocked
+            unlock2Info.classList.remove('hidden');
         }
 
-        // Hide Level 3 unlock text if Level 3 is unlocked
+        // Show/Hide Level 3 unlock text
         if (unlockedLevels[3]) {
             unlock3Info.classList.add('hidden');
         } else {
-            unlock3Info.classList.remove('hidden'); // Show if not unlocked
+            unlock3Info.classList.remove('hidden');
         }
         
         // Hide the whole container if BOTH are unlocked
@@ -216,7 +295,15 @@ function setupMenu() {
             unlockContainer.classList.remove('hidden');
         }
     };
-    // --- END OF UPDATED FUNCTION ---
+    
+    function getLevelName(level) {
+        switch(level) {
+            case 1: return "ASTEROID FIELD";
+            case 2: return "NEBULA DRIFT";
+            case 3: return "PLANETARY RING";
+            default: return `Level ${level}`;
+        }
+    }
     
     levelBtns[1].addEventListener('click', () => { selectedLevel = 1; updateLevelSelectorUI(); });
     levelBtns[2].addEventListener('click', () => { if (unlockedLevels[2]) { selectedLevel = 2; updateLevelSelectorUI(); } });
@@ -225,81 +312,116 @@ function setupMenu() {
 }
 function setupCharacterSelector() {
     const previewCanvas = document.getElementById('character-preview');
+    // Ensure canvas size is set for 3D rendering
+    previewCanvas.width = 200; 
+    previewCanvas.height = 200;
+
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, previewCanvas.clientWidth / previewCanvas.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, previewCanvas.width / previewCanvas.height, 0.1, 1000);
     camera.position.z = 2.5;
     const renderer = new THREE.WebGLRenderer({ canvas: previewCanvas, alpha: true, antialias: true });
-    renderer.setSize(previewCanvas.clientWidth, previewCanvas.clientHeight);
+    renderer.setSize(previewCanvas.width, previewCanvas.height);
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); scene.add(ambientLight);
     const keyLight = new THREE.DirectionalLight(0xffffff, 1); keyLight.position.set(-1, 1, 3); scene.add(keyLight);
     let currentModel;
     
-    // --- MODIFIED: Ensure preview renders only after textures are loaded ---
+    // FIX: Character preview rendering logic
     function renderPreview() { 
-        if (!allTexturesLoaded) return; // Wait for textures to load
+        if (!allTexturesLoaded) return; 
         if (currentModel) scene.remove(currentModel); 
         currentModel = PLAYER_OBJECTS[selectedObjectId].createModel(); 
         currentModel.rotation.x = 0; 
         scene.add(currentModel); 
+        renderer.render(scene, camera); // Render once immediately
     }
     
-    // --- FIX APPLIED HERE: Removed X-axis rotation from animation ---
     function animatePreview() { 
         requestAnimationFrame(animatePreview); 
+        const time = Date.now();
         if (currentModel) { 
-            currentModel.rotation.y += 0.01; 
-            // currentModel.rotation.x += 0.005; // REMOVED to keep the rings circular
+            if (currentModel.userData.customAnimate) {
+                currentModel.userData.customAnimate(time);
+            } else if (currentModel.userData.shaderMaterial) {
+                currentModel.userData.shaderMaterial.uniforms.time.value += 0.05;
+                currentModel.rotation.y += 0.01; 
+            } else {
+                currentModel.rotation.y += 0.01; 
+            }
         } 
         renderer.render(scene, camera); 
     }
-    // --- END FIX ---
     
+    // MODIFIED FUNCTION
     updateCharacterSelectorDisplay = () => {
         const obj = PLAYER_OBJECTS[selectedObjectId];
         document.getElementById('character-name').textContent = obj.name;
+        
         const lockEl = document.getElementById('character-lock');
-        const startBtn = document.getElementById('start-button');
+        const statusEl = document.getElementById('character-status');
+        const startBtn = document.getElementById('start-mission-button-char');
+        const previewEl = document.getElementById('character-preview');
+        const lockOverlayEl = document.getElementById('lock-overlay'); // NEW: Get the overlay
+        
+        // --- VISUAL FEEDBACK: Update border color and shadow dynamically ---
+        if (obj.isUnlocked) {
+            previewEl.style.borderColor = 'var(--neon-green)';
+            previewEl.style.boxShadow = '0 0 10px var(--neon-green)';
+        } else {
+            // Set neutral color and shadow when locked
+            previewEl.style.borderColor = '#9ca3af'; 
+            previewEl.style.boxShadow = '0 0 10px #9ca3af'; 
+        }
+        
         if (obj.isUnlocked) { 
             lockEl.classList.add('hidden'); 
-            startBtn.disabled = false; 
+            statusEl.classList.remove('hidden');
+            statusEl.textContent = 'UNLOCKED!';
+            startBtn.disabled = false;
+            lockOverlayEl.classList.add('hidden'); // NEW: Hide the lock overlay
         } else { 
             lockEl.classList.remove('hidden'); 
+            statusEl.classList.add('hidden'); 
             
-            // Check for custom unlock text, otherwise use default
             if (obj.unlockText) {
                 lockEl.querySelector('.unlock-text').textContent = obj.unlockText;
             } else {
                 lockEl.querySelector('.unlock-text').textContent = `Unlock at Level ${obj.unlockLevel}`;
             }
             
-            startBtn.disabled = true; 
+            startBtn.disabled = true;
+            lockOverlayEl.classList.remove('hidden'); // NEW: Show the lock overlay
         }
-        if (allTexturesLoaded) { // Only render if loaded
+        if (allTexturesLoaded) { 
             renderPreview();
         }
     };
 
-    document.getElementById('next-char').addEventListener('click', () => { const i = characterOrder.indexOf(selectedObjectId); selectedObjectId = characterOrder[(i + 1) % characterOrder.length]; updateCharacterSelectorDisplay(); });
-    document.getElementById('prev-char').addEventListener('click', () => { const i = characterOrder.indexOf(selectedObjectId); selectedObjectId = characterOrder[(i - 1 + characterOrder.length) % characterOrder.length]; updateCharacterSelectorDisplay(); });
+    document.getElementById('next-char').addEventListener('click', () => { 
+        const i = characterOrder.indexOf(selectedObjectId); 
+        selectedObjectId = characterOrder[(i + 1) % characterOrder.length]; 
+        updateCharacterSelectorDisplay(); 
+    });
+    document.getElementById('prev-char').addEventListener('click', () => { 
+        const i = characterOrder.indexOf(selectedObjectId); 
+        selectedObjectId = characterOrder[(i - 1 + characterOrder.length) % characterOrder.length]; 
+        updateCharacterSelectorDisplay(); 
+    });
+
     updateCharacterSelectorDisplay();
     animatePreview();
 }
 
-// --- 3D MODEL CREATION FUNCTIONS ---
+// --- 3D MODEL CREATION FUNCTIONS (NO CHANGES) ---
 
-// --- MODIFIED: Rocket (Galaxy Cruiser) - FINS REMOVED ---
-function createRocketModel() {
+function createRocketModel() { 
     const modelGroup = new THREE.Group();
-    
     const bodyTexture = textureCache['rocketBody'];
-    
     const materials = { 
-        // Use texture, set color to white for texture clarity, increase roughness for scratched metal
         body: new THREE.MeshStandardMaterial({ 
             color: bodyTexture ? 0xffffff : 0xbbbbbb, 
             map: bodyTexture, 
             metalness: 0.9, 
-            roughness: 0.7, // Increased roughness to show scratches
+            roughness: 0.7,
             flatShading: false 
         }), 
         accent: new THREE.MeshStandardMaterial({ 
@@ -316,28 +438,20 @@ function createRocketModel() {
             emissiveIntensity: 0.2 
         }) 
     };
-    
-    // Main Body
     const bodyGeo = new THREE.CylinderGeometry(0.35, 0.5, 1.8, 64); 
     const body = new THREE.Mesh(bodyGeo, materials.body); 
     body.castShadow = true; 
     modelGroup.add(body);
-    
-    // Nose Cone
     const noseGeo = new THREE.ConeGeometry(0.35, 0.8, 32); 
     const nose = new THREE.Mesh(noseGeo, materials.accent); 
     nose.position.y = 1.3; 
     nose.castShadow = true; 
     modelGroup.add(nose);
-    
-    // Engine Section
     const engineGeo = new THREE.CylinderGeometry(0.4, 0.55, 0.5, 32); 
     const engine = new THREE.Mesh(engineGeo, materials.engine); 
     engine.position.y = -1.15; 
     engine.castShadow = true; 
     modelGroup.add(engine);
-
-    // Boosters 
     for (let i = -1; i <= 1; i += 2) { 
         const bGroup = new THREE.Group(); 
         const bGeo = new THREE.CylinderGeometry(0.15, 0.18, 1.2, 16); 
@@ -354,41 +468,26 @@ function createRocketModel() {
     }
     return modelGroup;
 }
-
-// --- MODIFIED: Planet (Wandering Saturn) - Ring tilt restored for better in-game view ---
-function createSaturnModel() {
+function createSaturnModel() { 
     const modelGroup = new THREE.Group();
-
     const planetTexture = textureCache['saturnPlanet'];
     const ringTexture = textureCache['saturnRing'];
-    
-    // 1. PLANET: Retained realistic settings
     const planetMat = new THREE.MeshStandardMaterial({ 
         color: planetTexture ? 0xffffff : 0xffd700,
         map: planetTexture, 
         metalness: 0.1, 
         roughness: 0.9 
     }); 
-    
     const planetGeo = new THREE.SphereGeometry(0.7, 64, 64); 
     const planet = new THREE.Mesh(planetGeo, planetMat); 
     planet.castShadow = true; 
     modelGroup.add(planet);
-    
-    // 2. RING: MODIFIED FOR SOLID VISIBILITY & SLIGHT TILT FOR GAMEPLAY
-    
-    // Switching to MeshBasicMaterial for rings prevents lighting/depth conflicts 
-    // that cause unwanted transparency artifacts in the preview and game view.
     const ringMat = new THREE.MeshBasicMaterial({ 
         color: ringTexture ? 0xffffff : 0x8B4513,
         map: ringTexture, 
         side: THREE.DoubleSide, 
-        // REMOVED: transparent, opacity, alphaMap, metalness, roughness, blending
     }); 
-    
     const ringGeo = new THREE.RingGeometry(0.8, 1.5, 128); 
-
-    // Adjust UV mapping for the ring texture (NO CHANGE)
     if (ringTexture) {
         const uvs = ringGeo.attributes.uv.array;
         for (let i = 0; i < uvs.length; i += 2) {
@@ -396,70 +495,47 @@ function createSaturnModel() {
         }
         ringGeo.attributes.uv.needsUpdate = true;
     }
-    
     const ring = new THREE.Mesh(ringGeo, ringMat); 
-    
-    // RESTORED: This slight tilt is necessary for the rings to be visible
-    // and appear 3D in the game world, but we prevent the model's rotation.x
-    // in animatePreview to keep the circle perfect in the selector.
     ring.rotation.x = Math.PI / 2.5; 
-    
-    ring.receiveShadow = true; // Not strictly needed for BasicMaterial but won't hurt
+    ring.receiveShadow = true; 
     modelGroup.add(ring);
-    
     return modelGroup;
 }
-
-// --- MODIFIED: Asteroid (Rogue Asteroid) with Textures (NO CHANGES) ---
-function createAsteroidModel() {
+function createAsteroidModel() { 
     const modelGroup = new THREE.Group();
-    
     const surfaceTexture = textureCache['asteroidSurface'];
-    
-    // Asteroid Material
     const mat = new THREE.MeshStandardMaterial({ 
         color: surfaceTexture ? 0xffffff : 0x555555,
         map: surfaceTexture, 
-        roughness: 1.0, // Fully rough
-        metalness: 0.0, // Non-metallic
+        roughness: 1.0, 
+        metalness: 0.0, 
         flatShading: true,
         emissive: 0x333333,
         emissiveIntensity: 0.1
     }); 
-    
     const geo = new THREE.IcosahedronGeometry(0.8, 2); 
     const pos = geo.attributes.position;
-    
-    // More dramatic vertex displacement for a rugged shape
     for (let i = 0; i < pos.count; i++) { 
         const v = new THREE.Vector3().fromBufferAttribute(pos, i); 
         v.multiplyScalar(1 + (Math.random() - 0.5) * 0.6); 
         pos.setXYZ(i, v.x, v.y, v.z); 
     }
-    
     geo.computeVertexNormals(); 
     const asteroid = new THREE.Mesh(geo, mat); 
     asteroid.castShadow = true; 
-    
-    // Apply UV repetition to make the texture appear smaller and more detailed on the large asteroid
     if (surfaceTexture) {
-        surfaceTexture.repeat.set(4, 4); // Repeat texture 4 times
+        surfaceTexture.repeat.set(4, 4); 
         surfaceTexture.needsUpdate = true;
     }
-
     modelGroup.add(asteroid);
     return modelGroup;
 }
-
-// --- Orb Model (NO CHANGES) ---
-function createOrbModel() {
+function createOrbModel() { 
     const modelGroup = new THREE.Group();
-
-    // Shader material from user's example
     const orbMaterial = new THREE.ShaderMaterial({
         uniforms: {
             time: { value: 0.0 },
-            color: { value: new THREE.Color(0x00ffff) } // Cyan color
+            color: { value: new THREE.Color(0x00ffff) } 
         },
         vertexShader: `
             varying vec2 vUv;
@@ -477,34 +553,65 @@ function createOrbModel() {
             varying vec3 vPosition;
 
             void main() {
-                // Swirling pattern using noise-like sin waves
                 float swirl = sin(vUv.x * 10.0 + time * 2.0) * cos(vUv.y * 10.0 + time * 1.5);
                 swirl += sin(vUv.y * 15.0 + time * 3.0) * 0.5;
-                
-                // Glowing effect: radial gradient with swirl modulation
                 float glow = 1.0 - length(vUv - 0.5) * 2.0;
                 glow = max(0.0, glow + swirl * 0.3);
-                glow = pow(glow, 2.0); // Enhance glow
-                
+                glow = pow(glow, 2.0); 
                 gl_FragColor = vec4(color * glow, glow);
             }
         `,
         transparent: true,
-        blending: THREE.AdditiveBlending, // FIX for "too transparent"
+        blending: THREE.AdditiveBlending, 
         side: THREE.DoubleSide
     });
-
-    // Made smaller
     const geometry = new THREE.SphereGeometry(0.7, 64, 64);
-    
     const orb = new THREE.Mesh(geometry, orbMaterial);
-    orb.userData.shaderMaterial = orbMaterial; // Store for animation
+    orb.userData.shaderMaterial = orbMaterial; 
     modelGroup.add(orb);
-
-    // Add point light for extra glow (as in user's example)
     const pointLight = new THREE.PointLight(0x00ffff, 2, 10);
     modelGroup.add(pointLight);
+    return modelGroup;
+}
+
+// --- NEW MODEL: Hyper Cube (Trail color updated to match new green) ---
+function createHyperCubeModel() {
+    const modelGroup = new THREE.Group();
     
+    // 1. Main Cube - Glowing Wireframe
+    const geometry = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+    const material = new THREE.MeshBasicMaterial({
+        color: 0x66ff66, // LESS INTENSE NEON GREEN
+        wireframe: true,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending 
+    });
+    
+    const cube = new THREE.Mesh(geometry, material);
+    
+    // 2. Inner Core - Solid for a better center point
+    const coreGeo = new THREE.SphereGeometry(0.2, 8, 8);
+    const coreMat = new THREE.MeshBasicMaterial({
+        color: 0x66ff66, // LESS INTENSE NEON GREEN
+        emissive: 0x66ff66, // LESS INTENSE NEON GREEN
+        emissiveIntensity: 1.5
+    });
+    const core = new THREE.Mesh(coreGeo, coreMat);
+    
+    modelGroup.add(cube);
+    modelGroup.add(core);
+    
+    // Custom animation for the cube for the selector and in-game
+    modelGroup.userData.customAnimate = (time) => {
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.02;
+        cube.rotation.z += 0.015;
+        // Pulse the scale for an energy effect
+        const scalePulse = 1.0 + Math.sin(time * 0.005) * 0.05;
+        cube.scale.set(scalePulse, scalePulse, scalePulse);
+    };
+
     return modelGroup;
 }
 // --- END 3D MODEL CREATION FUNCTIONS ---
@@ -514,7 +621,6 @@ function initGame() {
   let isFirstPerson = false;
   let isPaused = false; 
   
-  // ADDED startingHighScore property
   const gameState = { score: 0, internalLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null, newlyUnlockedLevel: null, singularityUsed: false, highScoreNotified: false, startingHighScore: 0 };
   const gameConfig = { playerSpeed: -0.15, spawnInterval: 25, levelColors: { 1: { bg: '#010103' }, 2: { bg: '#0c0a1f' }, 3: { bg: '#1d0b30' } } };
   const INTERNAL_LEVEL_THRESHOLDS = { 4: 4000, 5: 7000}; 
@@ -554,9 +660,9 @@ function initGame() {
           this.colliders = [];
           const colors = ['#00FFFF', '#FF00FF', '#00FF00'];
           const beamPositions = [
-              { x: -4, z: -2 }, { x: -1, z: -2 },  // Gate 1: Pass on the right
-              { x: 1,  z: 0 },  { x: 4,  z: 0 },   // Gate 2: Pass on the left
-              { x: -4, z: 2 }, { x: -1, z: 2 }   // Gate 3: Pass on the right again
+              { x: -4, z: -2 }, { x: -1, z: -2 },  
+              { x: 1,  z: 0 },  { x: 4,  z: 0 },   
+              { x: -4, z: 2 }, { x: -1, z: 2 }   
           ];
           beamPositions.forEach((pos, i) => {
               const beam = new Box({
@@ -589,12 +695,18 @@ function initGame() {
   scene.add(new THREE.AmbientLight(0x87CEEB, .5));
   const keys = { a: { pressed: false }, d: { pressed: false } };
 
-  startGame = () => { document.getElementById('menuScreen').style.display = 'none'; document.getElementById('gameScreen').style.display = 'block'; setupNewGame(); };
+  // MODIFIED: startGame now removes ALL menu screens
+  startGame = () => { 
+      document.querySelectorAll('.menuScreen').forEach(screen => screen.classList.remove('active'));
+      document.getElementById('gameScreen').style.display = 'block'; 
+      setupNewGame(); 
+  };
   function createGalaxyBackground() { /* ... (no changes) */ const particleCount = 5000; const positions = []; for (let i = 0; i < particleCount; i++) { const radius = Math.random() * 200 + 20; const angle = Math.random() * Math.PI * 2; const x = Math.cos(angle) * radius; const y = Math.random() * 40 + 5; const z = Math.sin(angle) * radius; positions.push(x, y, z - 100); } const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); const material = new THREE.PointsMaterial({ size: 0.2, color: 0xffffff, transparent: true, opacity: 0.8, depthWrite: false }); const galaxy = new THREE.Points(geometry, material); galaxy.renderOrder = -1; return galaxy; }
   function boxCollision({box1,box2}){const b1p=new THREE.Vector3();box1.getWorldPosition(b1p);const b2p=new THREE.Vector3();box2.getWorldPosition(b2p);const b1=box1.geometry.parameters;const b2=box2.geometry.parameters;return(Math.abs(b1p.x-b2p.x)*2<(b1.width+b2.width))&&(Math.abs(b1p.y-b2p.y)*2<(b1.height+b2.height))&&(Math.abs(b1p.z-b2p.z)*2<(b1.depth+b2.depth))}
   
   function setupNewGame() {
       isPaused = false; 
+      // FIX: Ensure pause screens are hidden at start
       pauseScreen.style.display = 'none'; 
       pauseButton.style.display = 'flex'; 
 
@@ -661,9 +773,9 @@ function initGame() {
   function spawnObstacle() {
       let availableObstacles;
       if (selectedLevel === 1) {
-          availableObstacles = obstacleTypes.slice(0, 2); // AsteroidField, PlasmaShots
+          availableObstacles = obstacleTypes.slice(0, 2); 
       } else if (selectedLevel === 2) {
-          availableObstacles = obstacleTypes.slice(0, 3); // ... + EnergyField
+          availableObstacles = obstacleTypes.slice(0, 3); 
       } else {
           const sliceEnd = Math.min(gameState.internalLevel + 1, obstacleTypes.length);
           availableObstacles = obstacleTypes.slice(0, sliceEnd);
@@ -681,10 +793,10 @@ function initGame() {
       if(gameState.isGameOver)return;
       gameState.isGameOver=true;
       
-      playSound('crash'); // Play crash SFX once only
-      pauseButton.style.display = 'none'; // NEW
-      pauseScreen.style.display = 'none'; // NEW
-      isPaused = false; // NEW
+      playSound('crash'); 
+      pauseButton.style.display = 'none'; 
+      pauseScreen.style.display = 'none'; 
+      isPaused = false; 
       
       cancelAnimationFrame(animationId);
       document.getElementById('gameOverReason').textContent=r;
@@ -721,7 +833,7 @@ function initGame() {
           // --- NEW: Combined Button Logic ---
           if (gameState.newlyUnlockedLevel && gameState.newlyUnlockedCharacterId) {
               const combinedBtn = document.createElement('button');
-              combinedBtn.className = 'play-combined-button'; // Use new gold style
+              combinedBtn.className = 'play-combined-button'; 
               combinedBtn.textContent = `Play Level ${gameState.newlyUnlockedLevel} with ${PLAYER_OBJECTS[gameState.newlyUnlockedCharacterId].name}`;
               combinedBtn.onclick = () => {
                   selectedLevel = gameState.newlyUnlockedLevel;
@@ -810,23 +922,25 @@ function initGame() {
     setupNewGame(); 
   }
 
+  // MODIFIED: backToMenu now shows the Level Selection Screen
   function backToMenu() { 
     if(animationId) cancelAnimationFrame(animationId); 
     
-    isPaused = false; // NEW
-    pauseButton.style.display = 'none'; // NEW
-    pauseScreen.style.display = 'none'; // NEW
+    isPaused = false; 
+    pauseButton.style.display = 'none'; 
+    pauseScreen.style.display = 'none'; 
 
     cleanUpScene(); 
     document.getElementById('gameOverScreen').style.display = 'none'; 
     document.getElementById('gameScreen').style.display = 'none'; 
-    document.getElementById('menuScreen').style.display = 'flex'; 
+    
+    // Show the primary menu screen
+    showScreen('levelSelectionScreen');
+    
     updateCharacterSelectorDisplay(); 
     updateLevelSelectorUI(); 
   }
   
-  // --- GAMEPLAY SOUND HOOKS ---
-  // (Fix jump and crash SFX triggers, ensure handlers are not duplicated and are inside initGame scope)
   window.addEventListener('keydown', e => {
       switch(e.code){
           case 'KeyA':
@@ -837,7 +951,7 @@ function initGame() {
               break;
           case 'Space':
               if(player && player.onGround){
-                  playSound('jump'); // Play jump SFX right when player jumps
+                  playSound('jump');
                   player.velocity.y=.12;
               }
               break;
@@ -850,7 +964,7 @@ function initGame() {
       }
   });
 
-  window.addEventListener('keyup',e=>{switch(e.code){case'KeyA':keys.a.pressed=false;break;case'KeyD':keys.d.pressed=false;break}});
+  window.addEventListener('keyup',e=>{switch(e.code){case'KeyA':keys.a.pressed=false;case'KeyD':keys.d.pressed=false;}});
   window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight)});
   window.addEventListener('keydown', e => {
     if(e.code === 'KeyV') isFirstPerson = !isFirstPerson;
@@ -935,21 +1049,20 @@ function initGame() {
 
   // --- NEW PAUSE LOGIC ---
   function togglePause(pauseState) {
-      if (gameState.isGameOver) return; // Don't allow pause on game over
+      if (gameState.isGameOver) return; 
       isPaused = pauseState;
       pauseScreen.style.display = isPaused ? 'block' : 'none';
       
-      // Only show pause button if not paused AND not game over
       if (!isPaused && !gameState.isGameOver) {
-          pauseButton.style.display = 'flex'; // MODIFIED: Changed from 'block' to 'flex'
+          pauseButton.style.display = 'flex'; 
       } else {
           pauseButton.style.display = 'none';
       }
       
       if (isPaused) {
-          cancelAnimationFrame(animationId); // Stop the loop
+          cancelAnimationFrame(animationId); 
       } else {
-          animate(); // Restart the loop
+          animate(); 
       }
   }
 
@@ -969,14 +1082,19 @@ function initGame() {
   });
   
   function animate() {
-    if (isPaused) return; // NEW: Check if paused
+    if (isPaused) return; 
 
     animationId = requestAnimationFrame(animate);
     player.update(grounds);
 
-    // Update orb shader time if it's the current model
-    if (player.visualModel && player.visualModel.userData.shaderMaterial) {
-        player.visualModel.userData.shaderMaterial.uniforms.time.value += 0.05;
+    const time = Date.now();
+    if (player.visualModel) {
+        if (player.visualModel.userData.shaderMaterial) {
+            player.visualModel.userData.shaderMaterial.uniforms.time.value += 0.05;
+        }
+        if (player.visualModel.userData.customAnimate) {
+            player.visualModel.userData.customAnimate(time);
+        }
     }
 
     if (isFirstPerson) {
@@ -1005,29 +1123,20 @@ function initGame() {
         gameState.score=Math.floor(-player.position.z); 
         document.getElementById('score').innerText=`Score: ${gameState.score}`;
 
-        // --- MODIFIED HIGH SCORE BLOCK ---
         if (gameState.score > highScores[selectedLevel]) {
-            
-            // Check if we should notify:
-            // 1. We haven't notified yet in this run.
-            // 2. The high score AT THE START of this run (which we saved) was > 0.
             if (!gameState.highScoreNotified && gameState.startingHighScore > 0) {
-                gameState.highScoreNotified = true; // Set flag so it only shows once
+                gameState.highScoreNotified = true; 
                 const lUE = document.getElementById('levelUp');
-                lUE.innerText = `🌟 New High Score! 🌟`; // New message
+                lUE.innerText = `🌟 New High Score! 🌟`; 
                 lUE.classList.add('show');
-                setTimeout(() => lUE.classList.remove('show'), 2500); // 2.5s duration
+                setTimeout(() => lUE.classList.remove('show'), 2500); 
             }
-            
-            // Always update the high score value, regardless of notification
             highScores[selectedLevel] = gameState.score;
             localStorage.setItem('spaceRunnerHighScores', JSON.stringify(highScores));
             document.getElementById('highScore').innerText = `High Score: ${highScores[selectedLevel]}`;
         }
-        // --- END OF MODIFIED BLOCK ---
         
         // --- Level & Character Unlock Logic (Non-Stopping) ---
-                
         // Check for Level 2 Unlock (from Level 1)
         if (selectedLevel === 1 && !unlockedLevels[2] && gameState.score >= LEVEL_UNLOCK_SCORES[1]) {
             unlockedLevels[2] = true;
@@ -1082,8 +1191,7 @@ function initGame() {
             }
         }
 
-        // Check for Orb Unlock (from Level 3)
-        // Using 1000 as the score, as requested
+        // Check for Orb Unlock (from Level 3, score 1000)
         if (selectedLevel === 3 && !PLAYER_OBJECTS['orb'].isUnlocked && gameState.score >= 1000) {
             PLAYER_OBJECTS['orb'].isUnlocked = true;
             const unlocked = JSON.parse(localStorage.getItem('spaceRunnerUnlocks')) || ['rocket'];
@@ -1098,10 +1206,26 @@ function initGame() {
             uN.classList.add('show');
             setTimeout(()=>uN.classList.remove('show'), 3000);
         }
+
+        // Check for Hyper Cube Unlock (from Level 3, score 2000)
+        if (selectedLevel === 3 && !PLAYER_OBJECTS['hypercube'].isUnlocked && gameState.score >= 2000) {
+            PLAYER_OBJECTS['hypercube'].isUnlocked = true;
+            const unlocked = JSON.parse(localStorage.getItem('spaceRunnerUnlocks')) || ['rocket'];
+            if (!unlocked.includes('hypercube')) { 
+                unlocked.push('hypercube');
+                localStorage.setItem('spaceRunnerUnlocks', JSON.stringify(unlocked));
+            }
+            gameState.newlyUnlockedCharacterId = 'hypercube'; 
+            
+            const uN=document.getElementById('unlock-notification');
+            uN.innerHTML=`New Vehicle Unlocked:<br/><strong>${PLAYER_OBJECTS['hypercube'].name}</strong>`;
+            uN.classList.add('show');
+            setTimeout(()=>uN.classList.remove('show'), 3000);
+        }
         
         // --- Level 3 Progression ---
         if (selectedLevel === 3) {
-            const nIL = gameState.internalLevel + 1; // Next Internal Level
+            const nIL = gameState.internalLevel + 1; 
             if (INTERNAL_LEVEL_THRESHOLDS[nIL] && gameState.score >= INTERNAL_LEVEL_THRESHOLDS[nIL]) {
                 
                 gameState.internalLevel = nIL; 
@@ -1112,20 +1236,18 @@ function initGame() {
                 lUE.classList.add('show');
                 setTimeout(()=>lUE.classList.remove('show'),2000);
                 
-                // --- MODIFICATION: Slower speed increase for stages ---
                 if (nIL === 4) {
-                    gameConfig.playerSpeed -= .01; // Was -0.02
+                    gameConfig.playerSpeed -= .01; 
                     gameConfig.spawnInterval = 16; 
                 } else if (nIL === 5) {
-                    gameConfig.playerSpeed -= .01; // Was -0.02
+                    gameConfig.playerSpeed -= .01; 
                     gameConfig.spawnInterval = 14;
                 }
             }
         }
     }
 
-    // --- MODIFICATION: Slower progressive speed increase ---
-    if(selectedLevel === 3 && gameState.internalLevel >= 3) gameConfig.playerSpeed-=.000001; // Was -0.000003
+    if(selectedLevel === 3 && gameState.internalLevel >= 3) gameConfig.playerSpeed-=.000001; 
 
     player.velocity.x=0;player.velocity.z=gameConfig.playerSpeed;
     if(keys.a.pressed)player.velocity.x=-.05;else if(keys.d.pressed)player.velocity.x=.05;
@@ -1134,7 +1256,6 @@ function initGame() {
     if (!gameState.isGameOver && trailParticles.length < 50) { 
         const trailParticle = new THREE.Mesh(trailGeometry, trailMaterial.clone()); 
         
-        // Slight color variation for a flicker effect
         const randomColor = new THREE.Color(trailColor);
         randomColor.offsetHSL(0, (Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.2);
         trailParticle.material.color.set(randomColor);
@@ -1158,40 +1279,3 @@ function initGame() {
     renderer.render(scene, camera);
   }
 }
-
-// ---- SOUND EFFECT SYSTEM ----
-const audio = {
-    bgm: new Audio('sounds/invasion-march-star-wars-style-cinematic-music-219585.mp3'),             // Background music
-    jump: new Audio('sounds/jump.wav'),                                  // Jump sound
-    crash: new Audio('sounds/dying.mp3'),                                // Crash/Death sound
-    click: new Audio('sounds/buttonclick.mp3'),                          // Menu/button click sound
-};
-
-audio.bgm.loop = true;
-audio.bgm.volume = 0.14; // Softer background (was 0.3)
-
-audio.jump.volume = 1.0;  // Louder jump
-
-// Attempt to boost dying.mp3 volume also programmatically on each play for compatibility
-function playSound(s) {
-    if (!audio[s]) return;
-    if (s === 'crash') {
-        audio.crash.volume = 1.0; // Louder crash/death
-    }
-    audio[s].currentTime = 0; // rewind to start
-    audio[s].play();
-}
-
-// --- PLAY BGM on menu load, and ensure it continues ---
-window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        audio.bgm.play().catch(()=>{}); // Autoplay issues handled gently
-    }, 700);
-});
-
-// --- MENU BUTTON CLICK SOUNDS ---
-document.addEventListener('click', (e) => {
-    if (e.target.tagName === 'BUTTON') {
-        playSound('click');
-    }
-});
