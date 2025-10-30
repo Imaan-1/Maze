@@ -1,24 +1,107 @@
 import * as THREE from 'three';
 
+// --- GLOBAL TEXTURE LOADER AND CACHE ---
+const textureLoader = new THREE.TextureLoader();
+const TEXTURES = {
+    rocketBody: 'metal_texture.jpg', 
+    asteroidSurface: 'asteroid.jpg', 
+    saturnPlanet: 'saturn-colour.jpg', 
+    saturnRing: 'saturn-rings.png' 
+};
+const textureCache = {};
+let allTexturesLoaded = false;
+let updateCharacterSelectorDisplay;
+let updateLevelSelectorUI;
+let startGame;
+
+// --- Loading function for textures ---
+function loadTextures(callback) {
+    const texturePromises = Object.entries(TEXTURES).map(([key, url]) => {
+        return new Promise((resolve) => {
+            textureLoader.load(url, 
+                (texture) => {
+                    // Added wrapping and filtering for better texture quality
+                    texture.wrapS = THREE.RepeatWrapping;
+                    texture.wrapT = THREE.RepeatWrapping;
+                    texture.minFilter = THREE.LinearMipMapLinearFilter;
+                    textureCache[key] = texture;
+                    resolve();
+                },
+                undefined,
+                () => {
+                    console.error(`Failed to load texture: ${url}. Using fallback color.`);
+                    textureCache[key] = null; // Use null as fallback indicator
+                    resolve();
+                }
+            );
+        });
+    });
+
+    Promise.all(texturePromises).then(() => {
+        allTexturesLoaded = true;
+        console.log("All textures loaded (or failed to load).");
+        if (callback) callback();
+    });
+}
+
 // --- CHARACTER DEFINITIONS ---
 const PLAYER_OBJECTS = {
-    rocket: { name: "Galaxy Cruiser", isUnlocked: true, unlockLevel: 1, createModel: createRocketModel, colliderSize: { width: 1, height: 1, depth: 1.8 } },
-    asteroid: { name: "Rogue Asteroid", isUnlocked: false, unlockLevel: 2, createModel: createAsteroidModel, colliderSize: { width: 1.2, height: 1.2, depth: 1.2 } },
-    planet: { name: "Wandering Saturn", isUnlocked: false, unlockLevel: 3, createModel: createSaturnModel, colliderSize: { width: 1.5, height: 1.5, depth: 1.5 } },
-    // --- MODIFIED ---
-    orb: { name: "Swirling Orb", isUnlocked: false, unlockLevel: 3, createModel: createOrbModel, colliderSize: { width: 1.4, height: 1.4, depth: 1.4 }, unlockText: "Score 1000 in Level 3" }
+    rocket: { 
+        name: "Galaxy Cruiser", 
+        isUnlocked: true, 
+        unlockLevel: 1, 
+        createModel: createRocketModel, 
+        colliderSize: { width: 1, height: 1, depth: 1.8 }, 
+        trailColor: 0xff4500, // Orange-Red
+        trailSize: 0.18, 
+        trailMaterial: null,
+        textures: { body: 'rocketBody', accent: null } 
+    }, 
+    asteroid: { 
+        name: "Rogue Asteroid", 
+        isUnlocked: false, 
+        unlockLevel: 2, 
+        createModel: createAsteroidModel, 
+        colliderSize: { width: 1.2, height: 1.2, depth: 1.2 }, 
+        trailColor: 0x90EE90, // Light Green
+        trailSize: 0.22, 
+        trailMaterial: null,
+        textures: { surface: 'asteroidSurface' }
+    },
+    planet: { 
+        name: "Wandering Saturn", 
+        isUnlocked: false, 
+        unlockLevel: 3, 
+        createModel: createSaturnModel, 
+        colliderSize: { width: 1.5, height: 1.5, depth: 1.5 }, 
+        trailColor: 0xffd700, // Gold
+        trailSize: 0.25, 
+        trailMaterial: null,
+        textures: { planet: 'saturnPlanet', ring: 'saturnRing' }
+    },
+    orb: { 
+        name: "Swirling Orb", 
+        isUnlocked: false, 
+        unlockLevel: 3, 
+        createModel: createOrbModel, 
+        colliderSize: { width: 1.4, height: 1.4, depth: 1.4 }, 
+        unlockText: "Score 1000 in Level 3", 
+        trailColor: 0x00ffff, // Cyan
+        trailSize: 0.15, 
+        trailMaterial: null,
+        textures: {}
+    }
 };
 let selectedObjectId = 'rocket';
-// --- MODIFIED ---
 const characterOrder = ['rocket', 'asteroid', 'planet', 'orb'];
 
-// --- Level State Management ---
+// --- Level State Management (NO CHANGES) ---
 let selectedLevel = 1;
 const LEVEL_UNLOCK_SCORES = { 1: 1000, 2: 1000, 3: Infinity }; 
 let unlockedLevels = { 1: true, 2: false, 3: false };
 let highScores = { 1: 0, 2: 0, 3: 0 };
 
-// --- Load Unlocks from localStorage ---
+// --- Load Unlocks from localStorage (NO CHANGES) ---
 const savedUnlocks = JSON.parse(localStorage.getItem('spaceRunnerUnlocks'));
 if (savedUnlocks) {
     savedUnlocks.forEach(id => {
@@ -37,13 +120,12 @@ if (savedHighScores) {
 }
 
 // --- INITIAL SETUP & GLOBAL FUNCTIONS ---
-let updateCharacterSelectorDisplay;
-let updateLevelSelectorUI;
-let startGame;
 
-setupMenu();
-setupCharacterSelector();
-initGame(); 
+loadTextures(() => {
+    setupMenu();
+    setupCharacterSelector();
+    initGame(); 
+});
 
 // --- MENU & CHARACTER SELECTOR LOGIC ---
 function createStarfield() {
@@ -109,7 +191,6 @@ function setupMenu() {
             }
         }
 
-        // --- ADDED THIS NEW LOGIC ---
         const unlock2Info = document.getElementById('unlock-level-2-info');
         const unlock3Info = document.getElementById('unlock-level-3-info');
         const unlockContainer = document.getElementById('unlock-info-container');
@@ -134,7 +215,6 @@ function setupMenu() {
         } else {
             unlockContainer.classList.remove('hidden');
         }
-        // --- END OF ADDED LOGIC ---
     };
     // --- END OF UPDATED FUNCTION ---
     
@@ -153,10 +233,27 @@ function setupCharacterSelector() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); scene.add(ambientLight);
     const keyLight = new THREE.DirectionalLight(0xffffff, 1); keyLight.position.set(-1, 1, 3); scene.add(keyLight);
     let currentModel;
-    function renderPreview() { if (currentModel) scene.remove(currentModel); currentModel = PLAYER_OBJECTS[selectedObjectId].createModel(); currentModel.rotation.x = 0; scene.add(currentModel); }
-    function animatePreview() { requestAnimationFrame(animatePreview); if (currentModel) { currentModel.rotation.y += 0.01; currentModel.rotation.x += 0.005; } renderer.render(scene, camera); }
     
-    // --- MODIFIED ---
+    // --- MODIFIED: Ensure preview renders only after textures are loaded ---
+    function renderPreview() { 
+        if (!allTexturesLoaded) return; // Wait for textures to load
+        if (currentModel) scene.remove(currentModel); 
+        currentModel = PLAYER_OBJECTS[selectedObjectId].createModel(); 
+        currentModel.rotation.x = 0; 
+        scene.add(currentModel); 
+    }
+    
+    // --- FIX APPLIED HERE: Removed X-axis rotation from animation ---
+    function animatePreview() { 
+        requestAnimationFrame(animatePreview); 
+        if (currentModel) { 
+            currentModel.rotation.y += 0.01; 
+            // currentModel.rotation.x += 0.005; // REMOVED to keep the rings circular
+        } 
+        renderer.render(scene, camera); 
+    }
+    // --- END FIX ---
+    
     updateCharacterSelectorDisplay = () => {
         const obj = PLAYER_OBJECTS[selectedObjectId];
         document.getElementById('character-name').textContent = obj.name;
@@ -177,9 +274,10 @@ function setupCharacterSelector() {
             
             startBtn.disabled = true; 
         }
-        renderPreview();
+        if (allTexturesLoaded) { // Only render if loaded
+            renderPreview();
+        }
     };
-    // --- END MODIFIED ---
 
     document.getElementById('next-char').addEventListener('click', () => { const i = characterOrder.indexOf(selectedObjectId); selectedObjectId = characterOrder[(i + 1) % characterOrder.length]; updateCharacterSelectorDisplay(); });
     document.getElementById('prev-char').addEventListener('click', () => { const i = characterOrder.indexOf(selectedObjectId); selectedObjectId = characterOrder[(i - 1 + characterOrder.length) % characterOrder.length]; updateCharacterSelectorDisplay(); });
@@ -188,33 +286,172 @@ function setupCharacterSelector() {
 }
 
 // --- 3D MODEL CREATION FUNCTIONS ---
+
+// --- MODIFIED: Rocket (Galaxy Cruiser) - FINS REMOVED ---
 function createRocketModel() {
     const modelGroup = new THREE.Group();
-    const materials = { body: new THREE.MeshStandardMaterial({ color: 0xe1e1e1, metalness: 0.6, roughness: 0.4 }), accent: new THREE.MeshStandardMaterial({ color: 0xd1201b, metalness: 0.4, roughness: 0.5 }), engine: new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.3 }) };
-    const bodyGeo = new THREE.CylinderGeometry(0.35, 0.5, 1.8, 32); const body = new THREE.Mesh(bodyGeo, materials.body); body.castShadow = true; modelGroup.add(body);
-    const noseGeo = new THREE.ConeGeometry(0.35, 0.6, 32); const nose = new THREE.Mesh(noseGeo, materials.accent); nose.position.y = 1.2; nose.castShadow = true; modelGroup.add(nose);
-    const engineGeo = new THREE.CylinderGeometry(0.3, 0.4, 0.3, 32); const engine = new THREE.Mesh(engineGeo, materials.engine); engine.position.y = -1.05; modelGroup.add(engine);
-    for (let i = -1; i <= 1; i += 2) { const bGroup = new THREE.Group(); const bGeo = new THREE.CylinderGeometry(0.15, 0.18, 1.2, 16); const booster = new THREE.Mesh(bGeo, materials.body); booster.castShadow = true; bGroup.add(booster); const bnGeo = new THREE.ConeGeometry(0.15, 0.25, 16); const bNose = new THREE.Mesh(bnGeo, materials.accent); bNose.position.y = 0.725; bNose.castShadow = true; bGroup.add(bNose); bGroup.position.set(i * 0.5, -0.2, 0); modelGroup.add(bGroup); }
-    return modelGroup;
-}
-function createSaturnModel() {
-    const modelGroup = new THREE.Group();
-    const planetMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.2, roughness: 0.7 }); const planetGeo = new THREE.SphereGeometry(0.7, 32, 32);
-    const planet = new THREE.Mesh(planetGeo, planetMat); planet.castShadow = true; modelGroup.add(planet);
-    const ringMat = new THREE.MeshStandardMaterial({ color: 0x8B4513, side: THREE.DoubleSide }); const ringGeo = new THREE.RingGeometry(0.9, 1.4, 64);
-    const ring = new THREE.Mesh(ringGeo, ringMat); ring.rotation.x = Math.PI / 2.5; ring.receiveShadow = true; modelGroup.add(ring);
-    return modelGroup;
-}
-function createAsteroidModel() {
-    const modelGroup = new THREE.Group();
-    const mat = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.8 }); const geo = new THREE.IcosahedronGeometry(0.8, 1);
-    const pos = geo.attributes.position;
-    for (let i = 0; i < pos.count; i++) { const v = new THREE.Vector3().fromBufferAttribute(pos, i); v.multiplyScalar(1 + (Math.random() - 0.5) * 0.4); pos.setXYZ(i, v.x, v.y, v.z); }
-    geo.computeVertexNormals(); const asteroid = new THREE.Mesh(geo, mat); asteroid.castShadow = true; modelGroup.add(asteroid);
+    
+    const bodyTexture = textureCache['rocketBody'];
+    
+    const materials = { 
+        // Use texture, set color to white for texture clarity, increase roughness for scratched metal
+        body: new THREE.MeshStandardMaterial({ 
+            color: bodyTexture ? 0xffffff : 0xbbbbbb, 
+            map: bodyTexture, 
+            metalness: 0.9, 
+            roughness: 0.7, // Increased roughness to show scratches
+            flatShading: false 
+        }), 
+        accent: new THREE.MeshStandardMaterial({ 
+            color: 0xcc3333, 
+            metalness: 0.5, 
+            roughness: 0.3, 
+            flatShading: false 
+        }), 
+        engine: new THREE.MeshStandardMaterial({ 
+            color: 0x111111, 
+            metalness: 0.9, 
+            roughness: 0.1, 
+            emissive: 0x333333, 
+            emissiveIntensity: 0.2 
+        }) 
+    };
+    
+    // Main Body
+    const bodyGeo = new THREE.CylinderGeometry(0.35, 0.5, 1.8, 64); 
+    const body = new THREE.Mesh(bodyGeo, materials.body); 
+    body.castShadow = true; 
+    modelGroup.add(body);
+    
+    // Nose Cone
+    const noseGeo = new THREE.ConeGeometry(0.35, 0.8, 32); 
+    const nose = new THREE.Mesh(noseGeo, materials.accent); 
+    nose.position.y = 1.3; 
+    nose.castShadow = true; 
+    modelGroup.add(nose);
+    
+    // Engine Section
+    const engineGeo = new THREE.CylinderGeometry(0.4, 0.55, 0.5, 32); 
+    const engine = new THREE.Mesh(engineGeo, materials.engine); 
+    engine.position.y = -1.15; 
+    engine.castShadow = true; 
+    modelGroup.add(engine);
+
+    // Boosters 
+    for (let i = -1; i <= 1; i += 2) { 
+        const bGroup = new THREE.Group(); 
+        const bGeo = new THREE.CylinderGeometry(0.15, 0.18, 1.2, 16); 
+        const booster = new THREE.Mesh(bGeo, materials.body); 
+        booster.castShadow = true; 
+        bGroup.add(booster); 
+        const bnGeo = new THREE.ConeGeometry(0.15, 0.25, 16); 
+        const bNose = new THREE.Mesh(bnGeo, materials.accent); 
+        bNose.position.y = 0.725; 
+        bNose.castShadow = true; 
+        bGroup.add(bNose); 
+        bGroup.position.set(i * 0.5, -0.2, 0); 
+        modelGroup.add(bGroup); 
+    }
     return modelGroup;
 }
 
-// --- NEW/MODIFIED ---
+// --- MODIFIED: Planet (Wandering Saturn) - Ring tilt restored for better in-game view ---
+function createSaturnModel() {
+    const modelGroup = new THREE.Group();
+
+    const planetTexture = textureCache['saturnPlanet'];
+    const ringTexture = textureCache['saturnRing'];
+    
+    // 1. PLANET: Retained realistic settings
+    const planetMat = new THREE.MeshStandardMaterial({ 
+        color: planetTexture ? 0xffffff : 0xffd700,
+        map: planetTexture, 
+        metalness: 0.1, 
+        roughness: 0.9 
+    }); 
+    
+    const planetGeo = new THREE.SphereGeometry(0.7, 64, 64); 
+    const planet = new THREE.Mesh(planetGeo, planetMat); 
+    planet.castShadow = true; 
+    modelGroup.add(planet);
+    
+    // 2. RING: MODIFIED FOR SOLID VISIBILITY & SLIGHT TILT FOR GAMEPLAY
+    
+    // Switching to MeshBasicMaterial for rings prevents lighting/depth conflicts 
+    // that cause unwanted transparency artifacts in the preview and game view.
+    const ringMat = new THREE.MeshBasicMaterial({ 
+        color: ringTexture ? 0xffffff : 0x8B4513,
+        map: ringTexture, 
+        side: THREE.DoubleSide, 
+        // REMOVED: transparent, opacity, alphaMap, metalness, roughness, blending
+    }); 
+    
+    const ringGeo = new THREE.RingGeometry(0.8, 1.5, 128); 
+
+    // Adjust UV mapping for the ring texture (NO CHANGE)
+    if (ringTexture) {
+        const uvs = ringGeo.attributes.uv.array;
+        for (let i = 0; i < uvs.length; i += 2) {
+            uvs[i + 1] *= 0.5; 
+        }
+        ringGeo.attributes.uv.needsUpdate = true;
+    }
+    
+    const ring = new THREE.Mesh(ringGeo, ringMat); 
+    
+    // RESTORED: This slight tilt is necessary for the rings to be visible
+    // and appear 3D in the game world, but we prevent the model's rotation.x
+    // in animatePreview to keep the circle perfect in the selector.
+    ring.rotation.x = Math.PI / 2.5; 
+    
+    ring.receiveShadow = true; // Not strictly needed for BasicMaterial but won't hurt
+    modelGroup.add(ring);
+    
+    return modelGroup;
+}
+
+// --- MODIFIED: Asteroid (Rogue Asteroid) with Textures (NO CHANGES) ---
+function createAsteroidModel() {
+    const modelGroup = new THREE.Group();
+    
+    const surfaceTexture = textureCache['asteroidSurface'];
+    
+    // Asteroid Material
+    const mat = new THREE.MeshStandardMaterial({ 
+        color: surfaceTexture ? 0xffffff : 0x555555,
+        map: surfaceTexture, 
+        roughness: 1.0, // Fully rough
+        metalness: 0.0, // Non-metallic
+        flatShading: true,
+        emissive: 0x333333,
+        emissiveIntensity: 0.1
+    }); 
+    
+    const geo = new THREE.IcosahedronGeometry(0.8, 2); 
+    const pos = geo.attributes.position;
+    
+    // More dramatic vertex displacement for a rugged shape
+    for (let i = 0; i < pos.count; i++) { 
+        const v = new THREE.Vector3().fromBufferAttribute(pos, i); 
+        v.multiplyScalar(1 + (Math.random() - 0.5) * 0.6); 
+        pos.setXYZ(i, v.x, v.y, v.z); 
+    }
+    
+    geo.computeVertexNormals(); 
+    const asteroid = new THREE.Mesh(geo, mat); 
+    asteroid.castShadow = true; 
+    
+    // Apply UV repetition to make the texture appear smaller and more detailed on the large asteroid
+    if (surfaceTexture) {
+        surfaceTexture.repeat.set(4, 4); // Repeat texture 4 times
+        surfaceTexture.needsUpdate = true;
+    }
+
+    modelGroup.add(asteroid);
+    return modelGroup;
+}
+
+// --- Orb Model (NO CHANGES) ---
 function createOrbModel() {
     const modelGroup = new THREE.Group();
 
@@ -249,7 +486,6 @@ function createOrbModel() {
                 glow = max(0.0, glow + swirl * 0.3);
                 glow = pow(glow, 2.0); // Enhance glow
                 
-                // --- MODIFIED --- (Made less translucent)
                 gl_FragColor = vec4(color * glow, glow);
             }
         `,
@@ -258,7 +494,7 @@ function createOrbModel() {
         side: THREE.DoubleSide
     });
 
-    // --- MODIFIED --- (Made smaller)
+    // Made smaller
     const geometry = new THREE.SphereGeometry(0.7, 64, 64);
     
     const orb = new THREE.Mesh(geometry, orbMaterial);
@@ -271,12 +507,12 @@ function createOrbModel() {
     
     return modelGroup;
 }
-// --- END NEW/MODIFIED ---
+// --- END 3D MODEL CREATION FUNCTIONS ---
 
 
 function initGame() {
   let isFirstPerson = false;
-  let isPaused = false; // NEW PAUSE STATE
+  let isPaused = false; 
   
   // ADDED startingHighScore property
   const gameState = { score: 0, internalLevel: 1, isGameOver: false, newlyUnlockedCharacterId: null, newlyUnlockedLevel: null, singularityUsed: false, highScoreNotified: false, startingHighScore: 0 };
@@ -291,7 +527,7 @@ function initGame() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.getElementById('gameScreen').appendChild(renderer.domElement);
   
-  // --- NEW: PAUSE MENU DOM ELEMENTS ---
+  // --- PAUSE MENU DOM ELEMENTS ---
   const pauseButton = document.getElementById('pause-button');
   const pauseScreen = document.getElementById('pauseScreen');
   const resumeButton = document.getElementById('resume-button');
@@ -301,7 +537,8 @@ function initGame() {
   document.getElementById('highScore').innerText = `High Score: ${highScores[selectedLevel]}`;
 
   let player, obstacles = [], trailParticles = [], grounds = [], lastSpawnZ, animationId;
-  const trailMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true }); const trailGeometry = new THREE.SphereGeometry(0.15, 6, 6);
+  let trailMaterial, trailGeometry, trailColor, trailSize; // Trail variables
+
   
   // --- Classes (Box, Player, AsteroidField, UFO, EnergyField, PlasmaShots, QuantumGate) ---
   class Box extends THREE.Mesh { constructor({width,height,depth,color,position,emissiveIntensity}) { super(new THREE.BoxGeometry(width,height,depth), new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:emissiveIntensity===undefined?0.2:emissiveIntensity})); this.width=width;this.height=height;this.depth=depth;this.position.set(position.x,position.y,position.z);}}
@@ -357,32 +594,32 @@ function initGame() {
   function boxCollision({box1,box2}){const b1p=new THREE.Vector3();box1.getWorldPosition(b1p);const b2p=new THREE.Vector3();box2.getWorldPosition(b2p);const b1=box1.geometry.parameters;const b2=box2.geometry.parameters;return(Math.abs(b1p.x-b2p.x)*2<(b1.width+b2.width))&&(Math.abs(b1p.y-b2p.y)*2<(b1.height+b2.height))&&(Math.abs(b1p.z-b2p.z)*2<(b1.depth+b2.depth))}
   
   function setupNewGame() {
-      isPaused = false; // NEW
-      pauseScreen.style.display = 'none'; // NEW
-      pauseButton.style.display = 'flex'; // MODIFIED: Changed from 'block' to 'flex'
+      isPaused = false; 
+      pauseScreen.style.display = 'none'; 
+      pauseButton.style.display = 'flex'; 
 
       gameState.isGameOver=false;gameState.score=0;
       gameState.internalLevel = selectedLevel; 
       gameState.newlyUnlockedCharacterId=null; 
       gameState.newlyUnlockedLevel = null; 
       gameState.singularityUsed = false;
-      gameState.highScoreNotified = false; // RESET THE FLAG
-      gameState.startingHighScore = highScores[selectedLevel]; // <-- ADD THIS: Snapshot the high score
+      gameState.highScoreNotified = false; 
+      gameState.startingHighScore = highScores[selectedLevel]; 
       
       // --- MODIFICATION: Speeds adjusted to be even slower ---
       switch(selectedLevel) {
         case 1:
-            gameConfig.playerSpeed = -0.08; // Was -0.10
+            gameConfig.playerSpeed = -0.08; 
             gameConfig.spawnInterval = 25;
             scene.background = new THREE.Color(gameConfig.levelColors[1].bg);
             break;
         case 2:
-            gameConfig.playerSpeed = -0.12; // Was -0.15
+            gameConfig.playerSpeed = -0.12; 
             gameConfig.spawnInterval = 22;
             scene.background = new THREE.Color(gameConfig.levelColors[2].bg);
             break;
         case 3: 
-            gameConfig.playerSpeed = -0.16; // Was -0.20
+            gameConfig.playerSpeed = -0.16; 
             gameConfig.spawnInterval = 18;
             scene.background = new THREE.Color(gameConfig.levelColors[3].bg);
             break;
@@ -390,6 +627,25 @@ function initGame() {
       
       lastSpawnZ=-20;
       obstacles=[];trailParticles=[];grounds=[];
+      
+      // --- NEW TRAIL SETUP ---
+      const charData = PLAYER_OBJECTS[selectedObjectId];
+      trailColor = charData.trailColor;
+      trailSize = charData.trailSize;
+      
+      // Create new materials if not already created
+      if (!charData.trailMaterial) {
+          charData.trailMaterial = new THREE.MeshBasicMaterial({ 
+              color: trailColor, 
+              transparent: true, 
+              blending: THREE.AdditiveBlending, // Added blending for a glowing look
+              opacity: 0.9 
+          });
+      }
+      trailMaterial = charData.trailMaterial;
+      trailGeometry = new THREE.SphereGeometry(trailSize, 6, 6); // Use character-specific size
+      // --- END NEW TRAIL SETUP ---
+
       player=new Player({characterId:selectedObjectId}); scene.add(player);
       for(let i=0;i<2;i++){const g=new Box({width:10,height:.5,depth:200,color:'#1a1a2e',position:{x:0,y:-2,z:-i*200},emissiveIntensity:0});g.receiveShadow=true;scene.add(g);grounds.push(g)}
       for(let i=0;i<8;i++)spawnObstacle();
@@ -508,12 +764,22 @@ function initGame() {
       // --- MODIFIED --- (Fix crash bug for shader material)
       player.visualModel.traverse(c => {
           if (c.isMesh && c.material) {
-              if (c.material.isShaderMaterial) {
-                  // Handle shader material (the orb)
-                  c.material.uniforms.color.value.set(0xd1201b); // Set the color uniform to red
-              } else if (c.material.color) {
-                  // Handle standard materials (rocket, etc.)
-                  c.material.color.set(0xd1201b);
+              if (Array.isArray(c.material)) {
+                  c.material.forEach(mat => {
+                      if (mat.isShaderMaterial) {
+                          mat.uniforms.color.value.set(0xd1201b); 
+                      } else if (mat.color) {
+                          mat.color.set(0xd1201b);
+                      }
+                  });
+              } else {
+                  if (c.material.isShaderMaterial) {
+                      // Handle shader material (the orb)
+                      c.material.uniforms.color.value.set(0xd1201b); // Set the color uniform to red
+                  } else if (c.material.color) {
+                      // Handle standard materials (rocket, etc.)
+                      c.material.color.set(0xd1201b);
+                  }
               }
           }
       });
@@ -683,12 +949,10 @@ function initGame() {
     animationId = requestAnimationFrame(animate);
     player.update(grounds);
 
-    // --- NEW ---
     // Update orb shader time if it's the current model
     if (player.visualModel && player.visualModel.userData.shaderMaterial) {
         player.visualModel.userData.shaderMaterial.uniforms.time.value += 0.05;
     }
-    // --- END NEW ---
 
     if (isFirstPerson) {
         const fpHeight = player.height * 1.4;
@@ -793,7 +1057,6 @@ function initGame() {
             }
         }
 
-        // --- NEW ---
         // Check for Orb Unlock (from Level 3)
         // Using 1000 as the score, as requested
         if (selectedLevel === 3 && !PLAYER_OBJECTS['orb'].isUnlocked && gameState.score >= 1000) {
@@ -810,7 +1073,6 @@ function initGame() {
             uN.classList.add('show');
             setTimeout(()=>uN.classList.remove('show'), 3000);
         }
-        // --- END NEW ---
         
         // --- Level 3 Progression ---
         if (selectedLevel === 3) {
@@ -843,8 +1105,31 @@ function initGame() {
     player.velocity.x=0;player.velocity.z=gameConfig.playerSpeed;
     if(keys.a.pressed)player.velocity.x=-.05;else if(keys.d.pressed)player.velocity.x=.05;
     galaxy.rotation.y += 0.0001;
-    if (!gameState.isGameOver && trailParticles.length < 50) { const trailParticle = new THREE.Mesh(trailGeometry, trailMaterial.clone()); trailParticle.position.copy(player.position); if (selectedObjectId === 'rocket') { trailParticle.position.z += player.depth / 2; } scene.add(trailParticle); trailParticles.push(trailParticle); }
-    for (let i = trailParticles.length - 1; i >= 0; i--) { const p = trailParticles[i]; p.material.opacity *= 0.93; if (p.material.opacity < 0.01) { scene.remove(p); trailParticles.splice(i, 1); } }
+    
+    if (!gameState.isGameOver && trailParticles.length < 50) { 
+        const trailParticle = new THREE.Mesh(trailGeometry, trailMaterial.clone()); 
+        
+        // Slight color variation for a flicker effect
+        const randomColor = new THREE.Color(trailColor);
+        randomColor.offsetHSL(0, (Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.2);
+        trailParticle.material.color.set(randomColor);
+        
+        trailParticle.position.copy(player.position); 
+        if (selectedObjectId === 'rocket') { 
+            trailParticle.position.z += player.depth / 2; 
+        } 
+        scene.add(trailParticle); 
+        trailParticles.push(trailParticle); 
+    }
+    for (let i = trailParticles.length - 1; i >= 0; i--) { 
+        const p = trailParticles[i]; 
+        p.material.opacity *= 0.93; 
+        if (p.material.opacity < 0.01) { 
+            scene.remove(p); 
+            trailParticles.splice(i, 1); 
+        } 
+    }
+    
     renderer.render(scene, camera);
   }
 }
