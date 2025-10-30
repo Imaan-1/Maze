@@ -338,15 +338,25 @@ body {
         0 0 40px var(--neon-green),
         0 0 80px rgba(102, 255, 102, 0.4),
         inset 0 0 60px rgba(102, 255, 102, 0.1) !important;
-    padding: 50px 60px !important;
     min-height: 600px;
+}
+
+/* UPDATED: Changed justify-content to space-around to push content lower */
+.char-select-modern .menu-content { 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around; /* Changed to space-around for lower placement */
+    height: 100%;
+    padding: 40px 60px !important;
 }
 
 .char-select-title {
     font-size: 3rem !important;
     text-transform: uppercase;
     letter-spacing: 8px;
-    margin-bottom: 40px !important;
+    /* Reduced bottom margin, flexbox now handles spacing */
+    margin-bottom: 20px !important; 
     text-shadow: 
         0 0 20px var(--neon-green),
         0 0 40px var(--neon-green),
@@ -354,6 +364,15 @@ body {
     animation: pulse-glow 2s ease-in-out infinite;
 }
 
+
+/* Ensure the character select title is centered inside the modal and occupies full width */
+#charSelectScreen .char-select-title,
+.char-select-modern .char-select-title {
+    align-self: center;
+    width: 100%;
+    text-align: center !important;
+    margin-top: 0;
+}
 @keyframes pulse-glow {
     0%, 100% {
         text-shadow: 
@@ -370,8 +389,14 @@ body {
 }
 
 .char-select-modern #character-selection-group {
-    margin-bottom: 40px;
-    margin-top: 20px;
+    /* Set flex-grow to 2 to push more space above this element */
+    flex-grow: 2; 
+    margin-top: 20px; 
+    margin-bottom: 30px; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .char-select-modern #char-selection-list {
@@ -415,20 +440,28 @@ body {
     text-shadow: 
         0 0 15px var(--neon-green),
         0 0 30px rgba(102, 255, 102, 0.6);
-    margin-bottom: 35px;
-    margin-top: 25px;
+    margin-bottom: 15px; 
+    margin-top: 15px; 
     letter-spacing: 3px;
 }
 
+.char-select-modern #char-info-box {
+    /* Set flex-grow to 1 to allocate space between the name and the buttons */
+    flex-grow: 1;
+}
+
 .char-select-modern #character-lock {
-    margin-bottom: 35px;
+    margin-bottom: 25px; 
 }
 
 .char-select-buttons {
     display: flex;
     gap: 20px;
     justify-content: center;
-    margin-top: 45px;
+    margin-top: 35px;
+    /* Set flex-grow to 1 to allocate space between the info box and the buttons */
+    flex-grow: 1; 
+    align-items: flex-end; /* Align buttons to the bottom of their available space */
 }
 
 .start-button-modern {
@@ -609,8 +642,16 @@ body {
     box-shadow: 0 0 5px rgba(102, 255, 102, 0.5);
 }
 
+/* --- GAME OVER BUTTONS FIX (Equal Size & Spacing) --- */
+#game-over-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Adds small space between buttons */
+    margin-top: 30px; /* Pushes buttons down from the reason/unlock prompt */
+}
 
 #game-over-buttons .restart-button { 
+    flex: 1; /* Ensures both buttons take up equal space */
     padding: 15px 30px;
     font-size: 1.4rem;
     background: var(--fail-red); 
@@ -625,6 +666,7 @@ body {
     box-shadow: 0 0 20px var(--fail-red);
 }
 #game-over-buttons .menu-button { 
+    flex: 1; /* Ensures both buttons take up equal space */
     padding: 15px 30px;
     font-size: 1.4rem;
     background: rgba(255, 255, 255, 0.1); 
@@ -637,6 +679,8 @@ body {
     transform: scale(1.05);
     border-color: #999;
 }
+/* --- END GAME OVER BUTTONS FIX --- */
+
 
 /* --- PAUSE BUTTON STYLING --- */
 #pause-button {
@@ -645,32 +689,40 @@ body {
     right: 20px;
     width: 50px;
     height: 50px;
-    background: rgba(0, 0, 0, 0.6);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
+    /* REMOVED BOX/BACKGROUND/BORDER STYLES */
+    background: none; 
+    border: none;
+    border-radius: 0;
+    
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* CHANGED to row to make bars vertical (the right way up) */
     align-items: center;
     justify-content: center;
     gap: 5px;
     cursor: pointer;
     z-index: 150;
     transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
+    /* REMOVED backdrop-filter */
 }
 
 #pause-button:hover {
-    background: rgba(0, 0, 0, 0.8);
-    border-color: rgba(255, 255, 255, 0.6);
+    background: none; /* Ensure no background on hover */
+    border-color: transparent;
     transform: scale(1.1);
+    /* NEW: Add a subtle glow on hover for visibility */
+    filter: drop-shadow(0 0 5px var(--neon-green)); 
 }
 
 #pause-button .pause-icon-bar {
-    width: 20px;
-    height: 4px;
-    background: white;
+    width: 4px; /* SWAPPED width and height for a vertical bar */
+    height: 20px; /* SWAPPED width and height for a vertical bar */
+    /* Set the color to the same golden color as the Level indicator */
+    background: #fbbf24; 
     border-radius: 2px;
+    /* Add a subtle text-shadow for a glow effect, similar to HUD text */
+    box-shadow: 0 0 5px #fbbf24;
 }
+/* --- END PAUSE BUTTON STYLING --- */
 
 /* --- PAUSE MODAL STYLING (Centering Fix) --- */
 #pauseScreen {
@@ -1155,6 +1207,10 @@ body {
         margin-bottom: 25px !important;
     }
     
+    .char-select-modern #char-selection-group {
+        flex-grow: 2; /* Increased growth */
+    }
+    
     .char-select-modern #char-selection-list {
         width: 280px;
         height: 280px;
@@ -1233,6 +1289,11 @@ body {
         font-size: 1rem;
     }
     
+    .main-char-name {
+        margin-top: 10px !important;
+        margin-bottom: 10px !important;
+    }
+    
     #character-preview {
         width: 180px;
         height: 180px;
@@ -1309,6 +1370,7 @@ body {
     }
     
     .game-title {
+        align-items: center;
         font-size: 2rem;
         margin-bottom: 5px;
     }
