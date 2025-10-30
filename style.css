@@ -1,8 +1,8 @@
 /* --- GLOBAL RESET & FONT/BACKGROUND --- */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { 
-  /* Dark space background with a subtle dark blue/green gradient */
-  background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e293b 100%); 
+  /* Deep space background with a subtle dark blue/purple gradient */
+  background: linear-gradient(135deg, #02010A 0%, #170A2A 50%, #2A173B 100%); 
   font-family: 'Arial', sans-serif; 
   overflow: hidden; 
   height: 100vh; 
@@ -10,15 +10,24 @@ body {
 }
 .hidden { display: none !important; }
 
-/* --- NEON GREEN COLOR & SHADOW DEFINITIONS (ADJUSTED) --- */
+/* --- NEON PURPLE/PINK/GOLD COLOR & SHADOW DEFINITIONS --- */
 :root {
-    --neon-green: #66FF66; /* LESS INTENSE GREEN */
-    --neon-shadow: 0 0 8px #66FF66, 0 0 15px #66FF66;
+    /* CORE NEON COLORS */
+    --neon-purple: #C084FC;   /* Primary neon color for main highlights (a bright, warm purple) */
+    --neon-pink: #F472B6;     /* Secondary neon color for accents (a vivid pink) */
+    --neon-gold: #FFD700;     /* Accent color for high scores/titles */
+    
+    /* SHADOWS & GLOWS */
+    --neon-shadow: 0 0 8px var(--neon-purple), 0 0 15px var(--neon-pink);
+    
+    /* BACKGROUNDS & BORDERS */
     --dark-background: rgba(0, 0, 0, 0.95); 
-    --border-color: rgba(102, 255, 102, 0.5); 
-    --hover-bg: rgba(102, 255, 102, 0.2);
-    --primary-bg-dark: rgba(102, 255, 102, 0.1);
-    --fail-red: #ff4d4d;
+    --border-color: rgba(192, 132, 252, 0.5); /* Based on neon-purple */
+    --hover-bg: rgba(192, 132, 252, 0.2);
+    --primary-bg-dark: rgba(192, 132, 252, 0.1);
+    
+    /* FAIL & ALERT - CHANGED TO BORDER ON PINK */
+    --fail-red: #FF7878; /* Lighter red/pinkish for the fail background */
 }
 
 /* --- STARFIELD & UTILITY --- */
@@ -46,7 +55,7 @@ body {
     background: var(--dark-background); 
     border-radius: 20px; 
     border: 2px solid var(--border-color); 
-    box-shadow: var(--neon-shadow), 0 0 50px rgba(102, 255, 102, 0.3); 
+    box-shadow: var(--neon-shadow), 0 0 50px rgba(192, 132, 252, 0.3); 
     backdrop-filter: blur(5px); 
     animation: float 6s ease-in-out infinite;
     max-width: 90%;
@@ -65,11 +74,11 @@ body {
     border-radius: 10px;
 }
 .menu-content::-webkit-scrollbar-thumb {
-    background: rgba(102, 255, 102, 0.5);
+    background: rgba(192, 132, 252, 0.5);
     border-radius: 10px;
 }
 .menu-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(102, 255, 102, 0.8);
+    background: rgba(192, 132, 252, 0.8);
 }
 
 .menu-content-small { max-width: 800px; } 
@@ -80,8 +89,8 @@ body {
 /* --- TITLES & HEADINGS --- */
 .game-title { 
   font-size: 3.5rem; 
-  color: var(--neon-green); 
-  text-shadow: var(--neon-shadow); 
+  color: var(--neon-purple); 
+  text-shadow: 0 0 8px var(--neon-purple), 0 0 15px var(--neon-pink); 
   margin-bottom: 5px; 
   letter-spacing: 5px;
   font-weight: bold;
@@ -97,8 +106,8 @@ body {
 }
 .menu-content h2, .section-title { 
     font-size: 1.8rem;
-    color: var(--neon-green);
-    text-shadow: 0 0 8px var(--neon-green);
+    color: var(--neon-pink);
+    text-shadow: 0 0 8px var(--neon-pink);
     margin-bottom: 15px;
     font-weight: bold;
     text-align: left;
@@ -123,13 +132,13 @@ body {
     border-radius: 4px;
     padding: 10px 15px;
     margin-bottom: 8px;
-    border: 1px solid rgba(102, 255, 102, 0.2);
+    border: 1px solid rgba(192, 132, 252, 0.2);
     min-height: 40px; 
 }
 .control-text { 
     font-weight: bold; 
-    color: var(--neon-green);
-    text-shadow: 0 0 2px var(--neon-green);
+    color: var(--neon-pink);
+    text-shadow: 0 0 2px var(--neon-pink);
     font-size: 1.1rem;
     width: 45%; 
     text-align: left;
@@ -157,7 +166,7 @@ body {
   font-size: 1.1rem;
   background: var(--primary-bg-dark);
   color: white;
-  border: 1px solid var(--neon-green);
+  border: 1px solid var(--neon-purple);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -166,10 +175,10 @@ body {
   text-align: center; 
 }
 .level-select-btn.selected {
-  background: var(--neon-green);
+  background: var(--neon-purple);
   color: #000;
-  box-shadow: 0 0 10px var(--neon-green);
-  border-color: var(--neon-green);
+  box-shadow: 0 0 10px var(--neon-purple);
+  border-color: var(--neon-purple);
 }
 #level-page-buttons {
     display: flex;
@@ -200,15 +209,15 @@ body {
 }
 
 .primary-button {
-    background: var(--neon-green);
+    background: var(--neon-purple);
     color: #000;
-    box-shadow: 0 0 10px var(--neon-green);
+    box-shadow: 0 0 10px var(--neon-purple);
 }
 .secondary-button {
     background: rgba(255, 255, 255, 0.1);
-    color: var(--neon-green);
-    border: 1px solid var(--neon-green);
-    box-shadow: 0 0 5px rgba(102, 255, 102, 0.5);
+    color: var(--neon-purple);
+    border: 1px solid var(--neon-purple);
+    box-shadow: 0 0 5px rgba(192, 132, 252, 0.5);
 }
 
 /* --- CHARACTER SELECTION PAGE FIXES --- */
@@ -231,10 +240,10 @@ body {
     width: 200px; 
     height: 200px; 
     border-radius: 50%;
-    /* Default border color is gray/white, will be overridden to neon green by JS when unlocked */
+    /* Default border color is gray/white, will be overridden to neon purple by JS when unlocked */
     border: 3px solid #9ca3af; 
     background: transparent;
-    /* Default shadow is gray/white, will be overridden to neon green by JS when unlocked */
+    /* Default shadow is gray/white, will be overridden to neon purple by JS when unlocked */
     box-shadow: 0 0 10px #9ca3af;
     display: block;
     z-index: 5;
@@ -265,7 +274,7 @@ body {
 .char-arrow { 
     background: none; 
     border: none; 
-    color: var(--neon-green); 
+    color: var(--neon-purple); 
     font-size: 3rem; 
     cursor: pointer; 
     padding: 0 15px;
@@ -293,21 +302,21 @@ body {
     padding: 15px 40px;
     font-size: 1.3rem;
     font-weight: bold;
-    background: linear-gradient(45deg, var(--neon-green), #7fff7f);
+    background: linear-gradient(45deg, var(--neon-purple), #a78bfa);
     color: #000;
     border: none;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
     text-transform: uppercase;
-    box-shadow: 0 0 20px var(--neon-green), 0 5px 15px rgba(0,0,0,0.5);
+    box-shadow: 0 0 20px var(--neon-purple), 0 5px 15px rgba(0,0,0,0.5);
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .start-button:hover:not(:disabled) {
     transform: translateY(-3px);
-    box-shadow: 0 0 30px var(--neon-green), 0 8px 20px rgba(0,0,0,0.6);
-    background: linear-gradient(45deg, #7fff7f, var(--neon-green));
+    box-shadow: 0 0 30px var(--neon-purple), 0 8px 20px rgba(0,0,0,0.6);
+    background: linear-gradient(45deg, #a78bfa, var(--neon-purple));
 }
 
 .start-button:disabled {
@@ -323,7 +332,7 @@ body {
     padding: 15px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 8px;
-    border: 1px solid rgba(102, 255, 102, 0.3);
+    border: 1px solid rgba(192, 132, 252, 0.3);
     color: #e5e7eb;
     font-size: 0.95rem;
     text-align: center;
@@ -332,12 +341,12 @@ body {
 
 /* === MODERN CHARACTER SELECTION REDESIGN === */
 .char-select-modern {
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(20, 20, 30, 0.9)) !important;
-    border: 3px solid var(--neon-green) !important;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(30, 10, 50, 0.9)) !important;
+    border: 3px solid var(--neon-pink) !important;
     box-shadow: 
-        0 0 40px var(--neon-green),
-        0 0 80px rgba(102, 255, 102, 0.4),
-        inset 0 0 60px rgba(102, 255, 102, 0.1) !important;
+        0 0 40px var(--neon-purple),
+        0 0 80px rgba(244, 114, 182, 0.4),
+        inset 0 0 60px rgba(192, 132, 252, 0.1) !important;
     min-height: 600px;
 }
 
@@ -358,9 +367,9 @@ body {
     /* Reduced bottom margin, flexbox now handles spacing */
     margin-bottom: 20px !important; 
     text-shadow: 
-        0 0 20px var(--neon-green),
-        0 0 40px var(--neon-green),
-        0 0 60px rgba(102, 255, 102, 0.5);
+        0 0 20px var(--neon-pink),
+        0 0 40px var(--neon-purple),
+        0 0 60px rgba(192, 132, 252, 0.5);
     animation: pulse-glow 2s ease-in-out infinite;
 }
 
@@ -376,15 +385,15 @@ body {
 @keyframes pulse-glow {
     0%, 100% {
         text-shadow: 
-            0 0 20px var(--neon-green),
-            0 0 40px var(--neon-green),
-            0 0 60px rgba(102, 255, 102, 0.5);
+            0 0 20px var(--neon-pink),
+            0 0 40px var(--neon-purple),
+            0 0 60px rgba(192, 132, 252, 0.5);
     }
     50% {
         text-shadow: 
-            0 0 30px var(--neon-green),
-            0 0 60px var(--neon-green),
-            0 0 90px rgba(102, 255, 102, 0.8);
+            0 0 30px var(--neon-pink),
+            0 0 60px var(--neon-purple),
+            0 0 90px rgba(192, 132, 252, 0.8);
     }
 }
 
@@ -407,11 +416,10 @@ body {
 .char-select-modern #character-preview {
     width: 300px;
     height: 300px;
-    border: 4px solid var(--neon-green);
-    background: transparent;
+    border: 4px solid var(--neon-pink);
     box-shadow: 
-        0 0 30px var(--neon-green),
-        0 0 60px rgba(102, 255, 102, 0.5);
+        0 0 30px var(--neon-purple),
+        0 0 60px rgba(192, 132, 252, 0.5);
 }
 
 .char-select-modern #lock-overlay {
@@ -425,21 +433,22 @@ body {
     font-size: 4rem;
     padding: 0 30px;
     transition: all 0.3s ease;
-    filter: drop-shadow(0 0 10px var(--neon-green));
+    color: var(--neon-pink);
+    filter: drop-shadow(0 0 10px var(--neon-purple));
 }
 
 .char-select-modern .char-arrow:hover {
     transform: scale(1.2);
-    filter: drop-shadow(0 0 20px var(--neon-green));
+    filter: drop-shadow(0 0 20px var(--neon-pink));
 }
 
 .char-select-modern .main-char-name {
     font-size: 2.5rem !important;
     font-weight: bold;
-    color: var(--neon-green);
+    color: var(--neon-purple);
     text-shadow: 
-        0 0 15px var(--neon-green),
-        0 0 30px rgba(102, 255, 102, 0.6);
+        0 0 15px var(--neon-purple),
+        0 0 30px rgba(192, 132, 252, 0.6);
     margin-bottom: 15px; 
     margin-top: 15px; 
     letter-spacing: 3px;
@@ -470,7 +479,7 @@ body {
     padding: 18px 40px;
     font-size: 1.4rem;
     font-weight: bold;
-    background: linear-gradient(135deg, var(--neon-green), #7fff7f);
+    background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
     color: #000;
     border: none;
     border-radius: 12px;
@@ -478,7 +487,7 @@ body {
     transition: all 0.3s ease;
     text-transform: uppercase;
     box-shadow: 
-        0 0 25px var(--neon-green), 
+        0 0 25px var(--neon-pink), 
         0 5px 20px rgba(0,0,0,0.5);
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
     letter-spacing: 2px;
@@ -487,9 +496,9 @@ body {
 .start-button-modern:hover:not(:disabled) {
     transform: translateY(-3px) scale(1.02);
     box-shadow: 
-        0 0 40px var(--neon-green), 
+        0 0 40px var(--neon-pink), 
         0 8px 25px rgba(0,0,0,0.6);
-    background: linear-gradient(135deg, #7fff7f, var(--neon-green));
+    background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
 }
 
 .start-button-modern:disabled {
@@ -547,9 +556,9 @@ body {
 #level { 
   font-size: 2.8rem; 
   font-weight: bold;
-  color: #fbbf24; /* Applied golden color */
-  text-shadow: 0 0 10px #fbbf24; /* Applied glow */
-  margin-bottom: 8px; /* Added space below it */
+  color: var(--neon-gold); 
+  text-shadow: 0 0 10px var(--neon-gold); 
+  margin-bottom: 8px; 
 }
 /* ADDED THIS RULE for spacing */
 #score {
@@ -558,7 +567,21 @@ body {
 /* --- END OF MODIFIED HUD STYLES --- */
 
 
-#levelUp, #unlock-notification { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fbbf24; font-size: 4rem; font-weight: bold; text-shadow: 0 0 20px #fbbf24; z-index: 1100; opacity: 0; pointer-events: none; text-align: center; width: 100%; }
+#levelUp, #unlock-notification { 
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    color: var(--neon-gold); 
+    font-size: 4rem; 
+    font-weight: bold; 
+    text-shadow: 0 0 20px var(--neon-gold); 
+    z-index: 1100; 
+    opacity: 0; 
+    pointer-events: none; 
+    text-align: center; 
+    width: 100%; 
+}
 #unlock-notification { font-size: 2.5rem; }
 #levelUp.show, #unlock-notification.show { animation: notifyAnimation 2.5s forwards; }
 @keyframes notifyAnimation { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 25% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1); } }
@@ -567,11 +590,12 @@ body {
     top: 50%; 
     left: 50%; 
     transform: translate(-50%, -50%); 
-    background: radial-gradient(circle, rgba(220, 38, 38, 0.9), rgba(0, 0, 0, 0.9)); 
+    /* Updated gradient to use the new lighter fail-red/pink */
+    background: radial-gradient(circle, rgba(255, 120, 120, 0.9), rgba(0, 0, 0, 0.9)); 
     padding: 40px 30px; 
     border-radius: 20px; 
-    border: 2px solid rgba(248, 113, 113, 0.5); 
-    box-shadow: 0 0 50px rgba(220, 38, 38, 0.5); 
+    border: 2px solid rgba(255, 160, 160, 0.5); /* Lighter border */
+    box-shadow: 0 0 50px rgba(255, 120, 120, 0.5); 
     display: none; 
     backdrop-filter: blur(10px); 
     z-index: 1200; 
@@ -615,7 +639,7 @@ body {
     text-shadow: var(--neon-shadow); /* Added neon shadow */
 }
 
-/* MODIFIED: Change combined play button to neon green primary style */
+/* MODIFIED: Change combined play button to neon purple primary style */
 #unlock-prompt button {
     padding: 10px 20px;
     font-size: 1.1rem;
@@ -630,16 +654,16 @@ body {
     box-shadow: 0 3px 10px rgba(0,0,0,0.4);
 }
 .play-combined-button, .play-next-button {
-    background: var(--neon-green); /* Changed to neon green */
+    background: var(--neon-purple); /* Changed to neon purple */
     color: #000;
-    box-shadow: 0 0 10px var(--neon-green);
+    box-shadow: 0 0 10px var(--neon-purple);
     border: none;
 }
 .try-new-button { /* Keeps the secondary button styling if only character is unlocked */
     background: rgba(255, 255, 255, 0.1); 
-    color: var(--neon-green); 
-    border: 1px solid var(--neon-green);
-    box-shadow: 0 0 5px rgba(102, 255, 102, 0.5);
+    color: var(--neon-purple); 
+    border: 1px solid var(--neon-purple);
+    box-shadow: 0 0 5px rgba(192, 132, 252, 0.5);
 }
 
 /* --- GAME OVER BUTTONS FIX (Equal Size & Spacing) --- */
@@ -661,7 +685,7 @@ body {
     border: none;
 }
 #game-over-buttons .restart-button:hover {
-    background: #ff7878;
+    background: #ff9999;
     transform: scale(1.05);
     box-shadow: 0 0 20px var(--fail-red);
 }
@@ -710,17 +734,17 @@ body {
     border-color: transparent;
     transform: scale(1.1);
     /* NEW: Add a subtle glow on hover for visibility */
-    filter: drop-shadow(0 0 5px var(--neon-green)); 
+    filter: drop-shadow(0 0 5px var(--neon-gold)); 
 }
 
 #pause-button .pause-icon-bar {
     width: 4px; /* SWAPPED width and height for a vertical bar */
     height: 20px; /* SWAPPED width and height for a vertical bar */
     /* Set the color to the same golden color as the Level indicator */
-    background: #fbbf24; 
+    background: var(--neon-gold); 
     border-radius: 2px;
     /* Add a subtle text-shadow for a glow effect, similar to HUD text */
-    box-shadow: 0 0 5px #fbbf24;
+    box-shadow: 0 0 5px var(--neon-gold);
 }
 /* --- END PAUSE BUTTON STYLING --- */
 
@@ -747,24 +771,24 @@ body {
 
     text-align: center;
     padding: 45px 40px;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15), rgba(236, 72, 153, 0.15));
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.15), rgba(244, 114, 182, 0.15), rgba(100, 116, 139, 0.15));
     backdrop-filter: blur(20px);
     border-radius: 25px; 
-    border: 2px solid rgba(147, 197, 253, 0.5); 
+    border: 2px solid rgba(192, 132, 252, 0.5); 
     box-shadow: 
-        0 0 30px rgba(59, 130, 246, 0.4),
-        0 0 60px rgba(147, 51, 234, 0.3),
+        0 0 30px rgba(192, 132, 252, 0.4),
+        0 0 60px rgba(244, 114, 182, 0.3),
         0 8px 32px rgba(0, 0, 0, 0.5);
     max-width: 420px;
     width: 90%;
 }
 
 .pause-content-box h2 {
-    background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+    background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.6));
+    filter: drop-shadow(0 0 20px rgba(192, 132, 252, 0.6));
     font-size: 2.2rem;
     margin-bottom: 10px;
 }
@@ -774,60 +798,37 @@ body {
     gap: 15px;
     margin-top: 25px;
 }
-#pause-buttons-container .resume-button {
+/* UNIFORM BUTTON STYLING */
+#pause-buttons-container button {
     width: 100%;
-    padding: 16px 30px;
-    font-size: 1.5rem;
-    background: linear-gradient(135deg, #10b981, #059669);
+    padding: 16px 30px; /* Use the largest padding for uniformity */
+    font-size: 1.5rem; /* Use the largest font size for uniformity */
     color: white;
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 0 4px 15px rgba(0, 0, 0, 0.4);
+    border: none;
     border-radius: 12px;
-    border: none;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
+    /* Apply the primary neon purple gradient to all three buttons */
+    background: linear-gradient(135deg, var(--neon-purple), #8b5cf6);
+    box-shadow: 0 0 15px rgba(192, 132, 252, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
 }
-#pause-buttons-container .resume-button:hover {
+#pause-buttons-container button:hover {
     transform: translateY(-3px);
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.8), 0 6px 20px rgba(0, 0, 0, 0.5);
-    background: linear-gradient(135deg, #34d399, #10b981);
+    /* Hover state is a reversed/lighter purple gradient for all buttons */
+    background: linear-gradient(135deg, #a78bfa, var(--neon-purple));
+    box-shadow: 0 0 25px rgba(192, 132, 252, 0.7), 0 6px 20px rgba(0, 0, 0, 0.5);
 }
-#pause-buttons-container .restart-button {
-    width: 100%;
-    padding: 14px 30px;
-    font-size: 1.25rem;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    border: none;
-    color: white;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 0 15px rgba(245, 158, 11, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-}
-#pause-buttons-container .restart-button:hover {
-    transform: translateY(-2px);
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    box-shadow: 0 0 25px rgba(245, 158, 11, 0.7), 0 6px 15px rgba(0, 0, 0, 0.4);
-}
-#pause-buttons-container .menu-button {
-    width: 100%;
-    padding: 14px 30px;
-    font-size: 1.25rem;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    border: none;
-    color: white;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 0 15px rgba(99, 102, 241, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-}
-#pause-buttons-container .menu-button:hover {
-    transform: translateY(-2px);
-    background: linear-gradient(135deg, #818cf8, #6366f1);
-    box-shadow: 0 0 25px rgba(99, 102, 241, 0.7), 0 6px 15px rgba(0, 0, 0, 0.4);
-}
+/* END UNIFORM BUTTON STYLING */
+
+/* Original button selectors, now using the uniform style from the 'button' rule above */
+#pause-buttons-container .resume-button {}
+#pause-buttons-container .resume-button:hover {}
+#pause-buttons-container .restart-button {}
+#pause-buttons-container .restart-button:hover {}
+#pause-buttons-container .menu-button {}
+#pause-buttons-container .menu-button:hover {}
+
 
 /* --- MENU NAVIGATION BUTTONS (QUESTS & SHOP) --- */
 .menu-navigation {
@@ -840,20 +841,20 @@ body {
 .menu-nav-btn {
     padding: 12px 30px;
     font-size: 1.1rem;
-    background: linear-gradient(45deg, #7c3aed, #a78bfa);
+    background: linear-gradient(45deg, var(--neon-pink), var(--neon-purple));
     color: white;
     border: none;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
     font-weight: bold;
-    box-shadow: 0 5px 15px rgba(124, 58, 237, 0.4);
+    box-shadow: 0 5px 15px rgba(244, 114, 182, 0.4);
 }
 
 .menu-nav-btn:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.6);
-    background: linear-gradient(45deg, #8b5cf6, #c4b5fd);
+    box-shadow: 0 8px 20px rgba(192, 132, 252, 0.6);
+    background: linear-gradient(45deg, var(--neon-purple), var(--neon-pink));
 }
 
 /* --- MODAL SCREENS (QUESTS & SHOP) --- */
@@ -868,7 +869,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at center, rgba(25, 25, 112, 0.95), rgba(0, 0, 0, 0.98));
+    background: radial-gradient(circle at center, rgba(30, 10, 50, 0.95), rgba(0, 0, 0, 0.98));
     backdrop-filter: blur(10px);
 }
 
@@ -877,8 +878,8 @@ body {
     padding: 40px 30px;
     background: rgba(0, 0, 0, 0.8);
     border-radius: 20px;
-    border: 2px solid rgba(167, 139, 250, 0.6);
-    box-shadow: 0 0 50px rgba(167, 139, 250, 0.4);
+    border: 2px solid rgba(244, 114, 182, 0.6);
+    box-shadow: 0 0 50px rgba(192, 132, 252, 0.4);
     max-width: 700px;
     width: 90%;
     max-height: 90vh;
@@ -897,18 +898,18 @@ body {
 }
 
 .modal-content::-webkit-scrollbar-thumb {
-    background: rgba(167, 139, 250, 0.5);
+    background: rgba(244, 114, 182, 0.5);
     border-radius: 10px;
 }
 
 .modal-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(167, 139, 250, 0.8);
+    background: rgba(244, 114, 182, 0.8);
 }
 
 .modal-title {
     font-size: 2.5rem;
-    color: #a78bfa;
-    text-shadow: 0 0 15px #a78bfa;
+    color: var(--neon-pink);
+    text-shadow: 0 0 15px var(--neon-purple);
     margin-bottom: 25px;
 }
 
@@ -938,7 +939,7 @@ body {
 
 .quest-item {
     background: rgba(255, 255, 255, 0.05);
-    border: 2px solid rgba(251, 191, 36, 0.3);
+    border: 2px solid rgba(255, 215, 0, 0.3);
     border-radius: 12px;
     padding: 15px;
     margin-bottom: 15px;
@@ -946,13 +947,13 @@ body {
 }
 
 .quest-item.completed {
-    border-color: rgba(34, 197, 94, 0.6);
-    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(192, 132, 252, 0.6);
+    background: rgba(192, 132, 252, 0.1);
 }
 
 .quest-title {
     font-size: 1.2rem;
-    color: #fbbf24;
+    color: var(--neon-gold);
     font-weight: bold;
     margin-bottom: 8px;
 }
@@ -977,10 +978,10 @@ body {
 .quest-reward-info {
     margin-top: 20px;
     padding: 15px;
-    background: rgba(251, 191, 36, 0.1);
-    border: 1px solid #fbbf24;
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid var(--neon-gold);
     border-radius: 10px;
-    color: #fbbf24;
+    color: var(--neon-gold);
     font-size: 1.1rem;
 }
 
@@ -988,7 +989,7 @@ body {
     width: 100%;
     padding: 15px 30px;
     font-size: 1.3rem;
-    background: linear-gradient(45deg, #fbbf24, #f59e0b);
+    background: linear-gradient(45deg, var(--neon-gold), #f59e0b);
     color: #1f2937;
     border: none;
     border-radius: 12px;
@@ -996,13 +997,13 @@ body {
     transition: all 0.3s ease;
     font-weight: bold;
     margin-top: 20px;
-    box-shadow: 0 5px 20px rgba(251, 191, 36, 0.5);
+    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
 }
 
 .claim-rewards-btn:hover:not(:disabled) {
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(251, 191, 36, 0.7);
-    background: linear-gradient(45deg, #fcd34d, #fbbf24);
+    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.7);
+    background: linear-gradient(45deg, #fcd34d, var(--neon-gold));
 }
 
 .claim-rewards-btn:disabled {
@@ -1013,24 +1014,24 @@ body {
 }
 
 .unclaimed-stars-info {
-    background: rgba(251, 191, 36, 0.2);
-    border: 2px solid #fbbf24;
+    background: rgba(255, 215, 0, 0.2);
+    border: 2px solid var(--neon-gold);
     padding: 12px;
     border-radius: 10px;
     margin-top: 15px;
     font-size: 1.2rem;
     font-weight: bold;
-    color: #fbbf24;
-    text-shadow: 0 0 10px #fbbf24;
+    color: var(--neon-gold);
+    text-shadow: 0 0 10px var(--neon-gold);
 }
 
 /* --- SHOP STYLES --- */
 .stars-display {
     font-size: 1.5rem;
-    color: #fbbf24;
+    color: var(--neon-gold);
     font-weight: bold;
     margin-bottom: 25px;
-    text-shadow: 0 0 10px #fbbf24;
+    text-shadow: 0 0 10px var(--neon-gold);
 }
 
 #shop-items-container {
@@ -1042,7 +1043,7 @@ body {
 
 .shop-item {
     background: rgba(255, 255, 255, 0.05);
-    border: 2px solid rgba(167, 139, 250, 0.3);
+    border: 2px solid rgba(244, 114, 182, 0.3);
     border-radius: 12px;
     padding: 20px;
     transition: all 0.3s ease;
@@ -1051,8 +1052,8 @@ body {
 
 .shop-item:hover {
     transform: translateY(-5px);
-    border-color: rgba(167, 139, 250, 0.6);
-    box-shadow: 0 5px 20px rgba(167, 139, 250, 0.3);
+    border-color: rgba(244, 114, 182, 0.6);
+    box-shadow: 0 5px 20px rgba(192, 132, 252, 0.3);
 }
 
 .shop-item.owned {
@@ -1063,7 +1064,7 @@ body {
 
 .shop-item-name {
     font-size: 1.3rem;
-    color: #a78bfa;
+    color: var(--neon-pink);
     font-weight: bold;
     margin-bottom: 10px;
 }
@@ -1075,7 +1076,7 @@ body {
 
 .shop-item-price {
     font-size: 1.2rem;
-    color: #fbbf24;
+    color: var(--neon-gold);
     font-weight: bold;
     margin-bottom: 15px;
 }
@@ -1083,7 +1084,7 @@ body {
 .shop-buy-btn {
     padding: 10px 25px;
     font-size: 1rem;
-    background: linear-gradient(45deg, #7c3aed, #a78bfa);
+    background: linear-gradient(45deg, var(--neon-pink), var(--neon-purple));
     color: white;
     border: none;
     border-radius: 10px;
@@ -1094,7 +1095,7 @@ body {
 
 .shop-buy-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    background: linear-gradient(45deg, #8b5cf6, #c4b5fd);
+    background: linear-gradient(45deg, var(--neon-purple), var(--neon-pink));
 }
 
 .shop-buy-btn:disabled {
@@ -1127,8 +1128,8 @@ body {
     gap: 10px;
     font-size: 2rem;
     font-weight: bold;
-    color: #fbbf24;
-    text-shadow: 0 0 15px #fbbf24, 0 0 30px #fbbf24;
+    color: var(--neon-gold);
+    text-shadow: 0 0 15px var(--neon-gold), 0 0 30px var(--neon-gold);
 }
 
 .quest-complete-star .star-icon {
@@ -1175,7 +1176,7 @@ body {
     padding: 12px 24px;
     font-size: 1.1rem;
     font-weight: bold;
-    background: linear-gradient(45deg, #3b82f6, #60a5fa);
+    background: linear-gradient(45deg, var(--neon-pink), var(--neon-purple));
     color: white;
     border: none;
     border-radius: 10px;
@@ -1186,8 +1187,8 @@ body {
 
 .menu-nav-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.5);
-    background: linear-gradient(45deg, #60a5fa, #93c5fd);
+    box-shadow: 0 8px 20px rgba(192, 132, 252, 0.5);
+    background: linear-gradient(45deg, var(--neon-purple), var(--neon-pink));
 }
 
 /* === RESPONSIVE DESIGN - FIT EVERYTHING ON SCREEN === */
