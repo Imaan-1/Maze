@@ -1,266 +1,530 @@
+/* --- GLOBAL RESET & FONT/BACKGROUND --- */
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #1a1a4a 100%); font-family: 'Arial', sans-serif; overflow: hidden; height: 100vh; color: white; }
-.starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; transition: transform 0.1s linear; }
+body { 
+  /* Dark space background with a subtle dark blue/green gradient */
+  background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e293b 100%); 
+  font-family: 'Arial', sans-serif; 
+  overflow: hidden; 
+  height: 100vh; 
+  color: white; 
+}
+.hidden { display: none !important; }
+
+/* --- NEON GREEN COLOR & SHADOW DEFINITIONS (ADJUSTED) --- */
+:root {
+    --neon-green: #66FF66; /* LESS INTENSE GREEN */
+    --neon-shadow: 0 0 8px #66FF66, 0 0 15px #66FF66;
+    --dark-background: rgba(0, 0, 0, 0.95); 
+    --border-color: rgba(102, 255, 102, 0.5); 
+    --hover-bg: rgba(102, 255, 102, 0.2);
+    --primary-bg-dark: rgba(102, 255, 102, 0.1);
+    --fail-red: #ff4d4d;
+}
+
+/* --- STARFIELD & UTILITY --- */
+.starfield { 
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; 
+  transition: transform 0.1s linear; 
+  background: black; 
+}
 .star { position: absolute; background: white; border-radius: 50%; animation: twinkle 3s infinite; }
 @keyframes twinkle { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 @keyframes shootingStar { 0% { transform: translateX(0) translateY(0); opacity: 1; } 100% { transform: translateX(300px) translateY(300px); opacity: 0; } }
-#menuScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, rgba(25, 25, 112, 0.9), rgba(0, 0, 0, 0.95)); }
-.menu-content { text-align: center; padding: 30px; background: rgba(0, 0, 0, 0.7); border-radius: 20px; border: 2px solid rgba(56, 189, 248, 0.5); box-shadow: 0 0 50px rgba(56, 189, 248, 0.3); backdrop-filter: blur(10px); animation: float 6s ease-in-out infinite; }
-@keyframes float { 0% { transform: translatey(0px); } 50% { transform: translatey(-15px); } 100% { transform: translatey(0px); } }
-.game-title { font-size: 3.5rem; color: #38bdf8; text-shadow: 0 0 20px #38bdf8, 0 0 40px #38bdf8; margin-bottom: 15px; }
-.game-subtitle { color: #e5e7eb; font-size: 1.2rem; margin-bottom: 25px; letter-spacing: 2px; }
 
-/* Level Selector Styles */
+/* --- MENU SCREENS CONTAINER (MODALS) --- */
+.menuScreen { 
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; 
+  display: none; 
+  align-items: center; justify-content: center; 
+  background: rgba(0, 0, 0, 1); 
+  padding: 20px;
+}
+.menuScreen.active { display: flex; }
+
+.menu-content { 
+    padding: 30px; background: var(--dark-background); 
+    border-radius: 20px; border: 2px solid var(--border-color); 
+    box-shadow: var(--neon-shadow), 0 0 50px rgba(102, 255, 102, 0.3); 
+    backdrop-filter: blur(5px); 
+    animation: float 6s ease-in-out infinite;
+    max-width: 90%;
+    width: 100%;
+}
+.menu-content-small { max-width: 800px; } 
+.menu-content-large { max-width: 750px; }
+
+@keyframes float { 0% { transform: translatey(0px); } 50% { transform: translatey(-10px); } 100% { transform: translatey(0px); } }
+
+/* --- TITLES & HEADINGS --- */
+.game-title { 
+  font-size: 3.5rem; 
+  color: var(--neon-green); 
+  text-shadow: var(--neon-shadow); 
+  margin-bottom: 5px; 
+  letter-spacing: 5px;
+  font-weight: bold;
+  text-align: center; 
+  white-space: nowrap; 
+}
+.game-subtitle {
+    font-size: 1.5rem;
+    color: white;
+    text-shadow: 0 0 5px #ffcc00; 
+    margin-bottom: 30px;
+    text-align: center;
+}
+.menu-content h2, .section-title { 
+    font-size: 1.8rem;
+    color: var(--neon-green);
+    text-shadow: 0 0 8px var(--neon-green);
+    margin-bottom: 15px;
+    font-weight: bold;
+    text-align: left;
+}
+.controls-section h2 { 
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 5px;
+  margin-top: 0;
+}
+.levels-section h2 { 
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 5px;
+  margin-top: 25px;
+}
+
+/* --- CONTROL FIXES --- */
+.control-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--primary-bg-dark); 
+    border-radius: 4px;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(102, 255, 102, 0.2);
+    min-height: 40px; 
+}
+.control-text { 
+    font-weight: bold; 
+    color: var(--neon-green);
+    text-shadow: 0 0 2px var(--neon-green);
+    font-size: 1.1rem;
+    width: 45%; 
+    text-align: left;
+}
+.control-input {
+    color: white;
+    font-size: 1.1rem; 
+    opacity: 0.8;
+    width: 50%; 
+    text-align: right;
+}
+
+/* --- LEVEL SELECTORS & BUTTONS (Centering Fixes) --- */
 #level-selector-container {
   display: flex;
-  justify-content: center;
+  justify-content: center; 
   gap: 15px;
-  margin-bottom: 25px;
+  margin-bottom: 20px; 
 }
 .level-select-btn {
-  padding: 10px 20px;
+  flex-grow: 0; 
+  min-width: 200px; 
+  max-width: 250px;
+  padding: 15px 10px;
   font-size: 1.1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--primary-bg-dark);
   color: white;
-  border: 2px solid #60a5fa;
+  border: 1px solid var(--neon-green);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: bold;
-}
-.level-select-btn:hover:not(:disabled) {
-  background: rgba(96, 165, 250, 0.3);
+  text-transform: uppercase;
+  text-align: center; 
 }
 .level-select-btn.selected {
-  background: #3b82f6;
-  box-shadow: 0 0 15px #3b82f6;
+  background: var(--neon-green);
+  color: #000;
+  box-shadow: 0 0 10px var(--neon-green);
+  border-color: var(--neon-green);
 }
-.level-select-btn:disabled {
-  background: rgba(75, 85, 99, 0.5);
-  border-color: #4b5563;
-  color: #9ca3af;
-  cursor: not-allowed;
+#level-page-buttons {
+    display: flex;
+    justify-content: center; 
+    margin-top: 30px;
 }
-.level-select-btn:disabled span {
-  opacity: 0.7;
-}
-
-/* ADDED THIS RULE */
 .unlock-info {
-  font-size: 0.9rem;
-  color: #e5e7eb; /* Matches subtitle color */
-  margin-bottom: 25px; /* Matches spacing of other menu items */
-  line-height: 1.5;
-  opacity: 0.8;
+    text-align: center;
+    margin-top: 15px;
+}
+.unlock-info p {
+    font-size: 0.95rem;
+    opacity: 0.7;
+    margin-bottom: 5px;
 }
 
-#character-selection { display: flex; align-items: center; justify-content: center; margin-bottom: 25px; }
-#char-display { position: relative; width: 180px; height: 150px; display: flex; flex-direction: column; align-items: center; }
-#character-preview { width: 180px; height: 120px; cursor: grab; }
-#character-name { font-size: 1.2rem; font-weight: bold; color: #fbbf24; text-shadow: 0 0 5px #fbbf24; }
-#character-lock { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9rem; color: #e5e7eb; }
-.lock-icon { font-size: 2rem; margin-bottom: 5px; }
-.char-arrow { background: none; border: none; color: #60a5fa; font-size: 2.5rem; cursor: pointer; padding: 10px; transition: transform 0.2s ease, color 0.2s ease; }
-.char-arrow:hover { transform: scale(1.2); color: #93c5fd; }
-.char-arrow:disabled { color: #374151; cursor: not-allowed; transform: scale(1); }
-.hidden { display: none !important; }
-.start-button { padding: 15px 40px; font-size: 1.5rem; background: linear-gradient(45deg, #1e40af, #3b82f6); color: white; border: none; border-radius: 15px; cursor: pointer; transition: all 0.3s ease; font-weight: bold; box-shadow: 0 10px 30px rgba(30, 64, 175, 0.5); margin-bottom: 20px; }
-.start-button:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(30, 64, 175, 0.7); }
-.start-button:disabled { background: #4b5563; box-shadow: none; transform: none; cursor: not-allowed; }
-.game-info { font-size: 0.9rem; }
-#gameScreen { display: none; }
+.action-button {
+    padding: 12px 25px;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    margin: 0 5px;
+    text-transform: uppercase;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
 
-/* --- MODIFIED HUD STYLES --- */
+.primary-button {
+    background: var(--neon-green);
+    color: #000;
+    box-shadow: 0 0 10px var(--neon-green);
+}
+.secondary-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--neon-green);
+    border: 1px solid var(--neon-green);
+    box-shadow: 0 0 5px rgba(102, 255, 102, 0.5);
+}
+
+/* --- CHARACTER SELECTION PAGE FIXES --- */
+#character-selection-group { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    margin-bottom: 20px; 
+}
+#char-selection-list {
+    position: relative; 
+    width: 250px; 
+    height: 250px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#character-preview { 
+    position: absolute;
+    width: 200px; 
+    height: 200px; 
+    border-radius: 50%;
+    /* Default border color is gray/white, will be overridden to neon green by JS when unlocked */
+    border: 3px solid #9ca3af; 
+    background: rgba(0, 0, 0, 0.3);
+    /* Default shadow is gray/white, will be overridden to neon green by JS when unlocked */
+    box-shadow: 0 0 10px #9ca3af;
+}
+
+/* ADDED: Styling for the Lock Overlay */
+#lock-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background over vehicle */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10; /* Ensure it is above the canvas */
+}
+.lock-icon-large {
+    font-size: 5rem;
+    color: white;
+    text-shadow: 0 0 15px white, 0 0 20px rgba(255, 255, 255, 0.5);
+    opacity: 0.9;
+}
+
+.char-arrow { 
+    background: none; 
+    border: none; 
+    color: var(--neon-green); 
+    font-size: 3rem; 
+    cursor: pointer; 
+    padding: 0 15px;
+    text-shadow: var(--neon-shadow); 
+    z-index: 5;
+}
+#char-info-box {
+    text-align: center; 
+    margin-bottom: 20px;
+}
+#character-lock {
+    text-align: center;
+    margin-top: 10px;
+}
+#char-page-buttons {
+    display: flex;
+    justify-content: center; 
+    gap: 20px;
+    margin-top: 30px;
+}
+
+/* --- HUD & IN-GAME NOTIFICATION FIXES --- */
+#gameScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50; 
+}
 #hud { 
   position: absolute; 
   top: 20px; 
   left: 20px; 
-  font-size: 1.5rem; /* Base size for score/highScore */
+  font-size: 1.5rem; 
   z-index: 200; 
   color: white; 
+  background: none; 
+  padding: 0; 
 }
-/* MODIFIED THIS RULE */
 #level { 
-  font-size: 2.5rem; /* Made it bigger */
+  font-size: 2.8rem; 
   font-weight: bold;
-  color: #fbbf24; /* Applied golden color */
-  text-shadow: 0 0 10px #fbbf24; /* Applied glow */
-  margin-bottom: 8px; /* Added space below it */
+  color: var(--neon-green); 
+  text-shadow: var(--neon-shadow); 
+  margin-bottom: 8px; 
 }
-/* ADDED THIS RULE for spacing */
-#score {
-  margin-bottom: 5px;
-}
-/* --- END OF MODIFIED HUD STYLES --- */
-
-
-#levelUp, #unlock-notification { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fbbf24; font-size: 4rem; font-weight: bold; text-shadow: 0 0 20px #fbbf24; z-index: 1100; opacity: 0; pointer-events: none; text-align: center; width: 100%; }
-#unlock-notification { font-size: 2.5rem; }
-#levelUp.show, #unlock-notification.show { animation: notifyAnimation 2.5s forwards; }
-@keyframes notifyAnimation { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 25% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1); } }
-#gameOverScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(220, 38, 38, 0.9), rgba(0, 0, 0, 0.9)); padding: 25px; border-radius: 20px; border: 2px solid rgba(248, 113, 113, 0.5); box-shadow: 0 0 50px rgba(220, 38, 38, 0.5); display: none; backdrop-filter: blur(10px); z-index: 1200; width: 90%; max-width: 500px; text-align: center; }
-#gameOverScreen h1 { font-size: 2.5rem; color: #ff6b6b; margin-bottom: 15px; }
-#gameOverScreen p { font-size: 1rem; margin-bottom: 15px; }
-
-/* --- UNLOCK PROMPT STYLES --- */
-#unlock-prompt {
-    padding: 15px;
-    background-color: rgba(251, 191, 36, 0.1);
-    border: 1px solid #fbbf24;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    display: none; /* Initially hidden */
-}
-.unlock-congrats {
-    font-size: 1.1rem;
-    color: #fbbf24;
-    margin-bottom: 15px !important;
-    text-shadow: 0 0 5px #fbbf24;
-}
-.try-new-button {
-    width: 100%;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: linear-gradient(45deg, #c026d3, #a21caf);
-    font-weight: bold;
-}
-.try-new-button:hover {
-    transform: translateY(-3px);
-    background: linear-gradient(45deg, #d946ef, #c026d3);
+#score, #highScore {
+    font-size: 1.5rem; 
+    opacity: 0.9;
 }
 
-.play-next-button {
-    width: 100%;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: linear-gradient(45deg, #059669, #10b981); /* Green 'go' color */
-    font-weight: bold;
-}
-.play-next-button:hover {
-    transform: translateY(-3px);
-    background: linear-gradient(45deg, #10b981, #34d399);
-}
-
-/* --- NEW STYLE FOR COMBINED BUTTON --- */
-.play-combined-button {
-    width: 100%;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    color: #1f2937; /* Dark text for light button */
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: linear-gradient(45deg, #fbbf24, #f59e0b); /* Gold/Yellow */
-    font-weight: bold;
-}
-.play-combined-button:hover {
-    transform: translateY(-3px);
-    background: linear-gradient(45deg, #fcd34d, #fbbf24);
-}
-/* --- END NEW STYLE --- */
-
-#game-over-buttons { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
-.restart-button, .menu-button { padding: 12px 24px; font-size: 1.2rem; color: white; border: none; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; }
-.restart-button { background: linear-gradient(45deg, #059669, #10b981); }
-.restart-button:hover { transform: translateY(-3px); background: linear-gradient(45deg, #10b981, #34d399); }
-.menu-button { background: linear-gradient(45deg, #4b5563, #6b7280); }
-.menu-button:hover { transform: translateY(-3px); background: linear-gradient(45deg, #6b7280, #9ca3af); }
-
-
-/* --- NEW PAUSE STYLES --- */
+/* FIX: Pause button visibility (removed square background/border) */
 #pause-button {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 200;
-  background: none;
-  border: none;
-  width: auto; 
-  height: auto; 
-  border-radius: 0; 
+  top: 25px; 
+  right: 25px;
+  z-index: 200; 
+  background: none; 
+  border: none; 
+  padding: 10px; 
   cursor: pointer;
-  transition: all 0.2s ease;
-  display: none; /* Show with JS */
-  padding: 10px; /* Increased padding for easier click target */
-
-  /* Flex properties to create pause icon */
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 7px; /* Space between bars */
+  gap: 7px;
 }
-
-/* NEW: Styles for the CSS-based pause icon bars */
 .pause-icon-bar {
-  display: block;
-  width: 6px;  /* Width of each bar */
-  height: 28px; /* Height of each bar */
-  background-color: #fbbf24; /* The gold color */
-  border-radius: 2px; /* Slightly rounded edges */
-  box-shadow: 0 0 10px #fbbf24; /* Glow effect */
-  transition: all 0.2s ease;
+  background-color: var(--neon-green); 
+  box-shadow: 0 0 10px var(--neon-green); 
+  width: 5px; 
+  height: 20px;
 }
 
-#pause-button:hover {
-  background: none;
-  opacity: 0.8;
-  transform: scale(1.1);
-}
-
-#pauseScreen {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(251, 191, 36, 0.8), rgba(0, 0, 0, 0.9)); 
-  padding: 25px;
-  border-radius: 20px;
-  border: 2px solid rgba(251, 191, 36, 0.5); 
-  box-shadow: 0 0 50px rgba(251, 191, 36, 0.5); 
-  display: none;
-  backdrop-filter: blur(10px);
-  z-index: 1300; /* Higher than game over */
-  width: 90%;
-  max-width: 500px;
-  text-align: center;
-}
-
-#pause-buttons-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.resume-button {
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    color: white;
-    border: none;
+/* --- NEW: In-Game Notification Styling & Animation --- */
+#levelUp, #unlock-notification {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centering fix */
+    z-index: 1000;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--neon-green);
+    text-shadow: var(--neon-shadow), 0 0 30px rgba(102, 255, 102, 0.6);
+    text-align: center;
+    padding: 15px 30px;
+    background: rgba(0, 0, 0, 0.7); /* Subtle dark background for contrast */
     border-radius: 10px;
+    opacity: 0; /* Hidden by default */
+    pointer-events: none; /* Allows clicks to pass through */
+}
+
+/* Adjust font size for unlock-notification since it has two lines */
+#unlock-notification {
+    font-size: 1.8rem;
+    line-height: 1.4;
+}
+
+/* Keyframe animation for pop up and fade out */
+@keyframes fade-out-center {
+    0% { opacity: 0; transform: translate(-50%, -40%) scale(0.8); }
+    10% { opacity: 1; transform: translate(-50%, -50%) scale(1); } /* Pop to center */
+    90% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); } /* Fade out and slightly scale up */
+}
+
+/* Apply the animation when the .show class is added */
+#levelUp.show, #unlock-notification.show {
+    animation: fade-out-center 2.5s ease-out forwards; /* 2.5 seconds total duration */
+}
+
+/* --- GAME OVER MODAL STYLING (Centering Fix) --- */
+#gameOverScreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+}
+.game-over-content-box {
+    /* --- ABSOLUTE CENTERING FIX --- */
+    position: absolute; 
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); 
+    /* --- END ABSOLUTE CENTERING FIX --- */
+    
+    text-align: center;
+    padding: 40px;
+    background: rgba(40, 0, 0, 0.95); 
+    border-radius: 20px;
+    border: 3px solid var(--fail-red);
+    box-shadow: 0 0 30px var(--fail-red);
+    width: 90%;
+    max-width: 500px;
+}
+.game-over-title {
+    color: var(--fail-red);
+    text-shadow: 0 0 10px var(--fail-red);
+}
+
+#game-over-buttons { 
+    display: flex; 
+    justify-content: center; 
+    gap: 20px; 
+    margin-top: 30px; 
+}
+#unlock-prompt {
+    margin-top: 20px;
+}
+#unlock-prompt p {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: #ffaa00;
+}
+/* MODIFIED: Change unlock congrats text to white with neon shadow */
+.unlock-congrats {
+    font-size: 1.3rem !important;
+    font-weight: bold;
+    color: white !important; /* Changed to White */
+    text-shadow: var(--neon-shadow); /* Added neon shadow */
+}
+
+/* MODIFIED: Change combined play button to neon green primary style */
+#unlock-prompt button {
+    padding: 10px 20px;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: linear-gradient(45deg, #1e40af, #3b82f6);
+    font-weight: bold;
+    margin: 5px 0;
+    display: block; 
+    width: 100%;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
 }
-.resume-button:hover {
-    transform: translateY(-3px);
-    background: linear-gradient(45deg, #2563eb, #60a5fa);
+.play-combined-button, .play-next-button {
+    background: var(--neon-green); /* Changed to neon green */
+    color: #000;
+    box-shadow: 0 0 10px var(--neon-green);
+    border: none;
+}
+.try-new-button { /* Keeps the secondary button styling if only character is unlocked */
+    background: rgba(255, 255, 255, 0.1); 
+    color: var(--neon-green); 
+    border: 1px solid var(--neon-green);
+    box-shadow: 0 0 5px rgba(102, 255, 102, 0.5);
 }
 
-/* Make buttons full-width inside pause menu */
-#pause-buttons-container .restart-button,
-#pause-buttons-container .menu-button,
+
+#game-over-buttons .restart-button { 
+    padding: 15px 30px;
+    font-size: 1.4rem;
+    background: var(--fail-red); 
+    box-shadow: 0 0 10px var(--fail-red);
+    color: white;
+    border-radius: 10px;
+    border: none;
+}
+#game-over-buttons .restart-button:hover {
+    background: #ff7878;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px var(--fail-red);
+}
+#game-over-buttons .menu-button { 
+    padding: 15px 30px;
+    font-size: 1.4rem;
+    background: rgba(255, 255, 255, 0.1); 
+    border: 2px solid #555;
+    color: #e5e7eb;
+    border-radius: 10px;
+}
+#game-over-buttons .menu-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+    border-color: #999;
+}
+
+/* --- PAUSE MODAL STYLING (Centering Fix) --- */
+#pauseScreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1300;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(5px);
+}
+.pause-content-box {
+    /* --- ABSOLUTE CENTERING FIX --- */
+    position: absolute; 
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); 
+    /* --- END ABSOLUTE CENTERING FIX --- */
+
+    text-align: center;
+    padding: 40px;
+    background: var(--dark-background);
+    border-radius: 20px; 
+    border: 2px solid var(--border-color); 
+    box-shadow: var(--neon-shadow), 0 0 50px rgba(102, 255, 102, 0.3);
+    max-width: 400px;
+    width: 90%;
+}
+#pause-buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
 #pause-buttons-container .resume-button {
     width: 100%;
+    padding: 15px 30px;
+    font-size: 1.5rem;
+    background: var(--neon-green);
+    color: #000;
+    box-shadow: 0 0 10px var(--neon-green);
+    border-radius: 10px;
+    border: none;
+    font-weight: bold;
+}
+#pause-buttons-container .resume-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px var(--neon-green);
+}
+#pause-buttons-container .restart-button,
+#pause-buttons-container .menu-button {
+    width: 100%;
+    padding: 12px 30px;
+    font-size: 1.2rem;
+    background: rgba(255, 255, 255, 0.1); 
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    border-radius: 8px;
+}
+#pause-buttons-container .restart-button:hover,
+#pause-buttons-container .menu-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
 }
