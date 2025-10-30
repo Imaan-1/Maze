@@ -132,31 +132,12 @@ if (savedHighScores) {
     highScores = { ...highScores, ...savedHighScores };
 }
 
-// ---- SOUND EFFECT SYSTEM ----
-const audio = {
-    bgm: new Audio('sounds/invasion-march-star-wars-style-cinematic-music-219585.mp3'),
-    jump: new Audio('sounds/jump.wav'),
-    crash: new Audio('sounds/dying.mp3'),
-    click: new Audio('sounds/buttonclick.mp3'),
-};
-
-audio.bgm.loop = true;
-audio.bgm.volume = 0.14; 
-
-function playSound(s) {
-    if (!audio[s]) return;
-    if (s === 'crash') {
-        audio.crash.volume = 1.0; 
-    }
-    audio[s].currentTime = 0; 
-    audio[s].play().catch(e => console.log("Sound play prevented:", e));
-}
-
 // --- INITIAL SETUP & GLOBAL FUNCTIONS ---
 
 loadTextures(() => {
     setupMenu();
     setupCharacterSelector();
+    setupQuestsAndShop();
     initGame(); 
 });
 
@@ -617,6 +598,30 @@ function createHyperCubeModel() {
 // --- END 3D MODEL CREATION FUNCTIONS ---
 
 
+// Apply skin colors to player model
+function applySkinToPlayer(player, skinItem) {
+    if (!player || !skinItem) return;
+    
+    // Apply color to all meshes in the visual model
+    player.visualModel.traverse(child => {
+        if (child.isMesh && child.material) {
+            if (Array.isArray(child.material)) {
+                child.material.forEach(mat => {
+                    if (mat.color && !mat.isShaderMaterial) {
+                        mat.color.setHex(skinItem.color);
+                    }
+                });
+            } else {
+                if (child.material.color && !child.material.isShaderMaterial) {
+                    child.material.color.setHex(skinItem.color);
+                }
+            }
+        }
+    });
+    
+    console.log(`Applied skin: ${skinItem.name} with color ${skinItem.color.toString(16)}`);
+}
+
 function initGame() {
   let isFirstPerson = false;
   let isPaused = false; 
@@ -742,7 +747,19 @@ function initGame() {
       
       // --- NEW TRAIL SETUP ---
       const charData = PLAYER_OBJECTS[selectedObjectId];
-      trailColor = charData.trailColor;
+      
+      // Use skin trail color if equipped
+      if (equippedSkin) {
+          const skinItem = SHOP_ITEMS.find(item => item.id === equippedSkin);
+          if (skinItem && skinItem.basedOn === selectedObjectId && skinItem.trailColor) {
+              trailColor = skinItem.trailColor;
+          } else {
+              trailColor = charData.trailColor;
+          }
+      } else {
+          trailColor = charData.trailColor;
+      }
+      
       trailSize = charData.trailSize;
       
       // Create new materials if not already created
@@ -758,7 +775,17 @@ function initGame() {
       trailGeometry = new THREE.SphereGeometry(trailSize, 6, 6); // Use character-specific size
       // --- END NEW TRAIL SETUP ---
 
-      player=new Player({characterId:selectedObjectId}); scene.add(player);
+      player=new Player({characterId:selectedObjectId}); 
+      
+      // Apply equipped skin if any
+      if (equippedSkin) {
+          const skinItem = SHOP_ITEMS.find(item => item.id === equippedSkin);
+          if (skinItem && skinItem.basedOn === selectedObjectId) {
+              applySkinToPlayer(player, skinItem);
+          }
+      }
+      
+      scene.add(player);
       for(let i=0;i<2;i++){const g=new Box({width:10,height:.5,depth:200,color:'#1a1a2e',position:{x:0,y:-2,z:-i*200},emissiveIntensity:0});g.receiveShadow=true;scene.add(g);grounds.push(g)}
       for(let i=0;i<8;i++)spawnObstacle();
 
@@ -793,10 +820,10 @@ function initGame() {
       if(gameState.isGameOver)return;
       gameState.isGameOver=true;
       
-      playSound('crash'); 
-      pauseButton.style.display = 'none'; 
-      pauseScreen.style.display = 'none'; 
-      isPaused = false; 
+      playSound('crash'); // Play crash SFX once only
+      pauseButton.style.display = 'none'; // NEW
+      pauseScreen.style.display = 'none'; // NEW
+      isPaused = false; // NEW
       
       cancelAnimationFrame(animationId);
       document.getElementById('gameOverReason').textContent=r;
@@ -953,6 +980,7 @@ function initGame() {
               if(player && player.onGround){
                   playSound('jump');
                   player.velocity.y=.12;
+                  updateQuestProgress('jump'); // Track jump for quests
               }
               break;
           case 'KeyR':
@@ -1279,3 +1307,40 @@ function initGame() {
     renderer.render(scene, camera);
   }
 }
+
+// ---- SOUND EFFECT SYSTEM ----
+const audio = {
+    bgm: new Audio('sounds/invasion-march-star-wars-style-cinematic-music-219585.mp3'),             // Background music
+    jump: new Audio('sounds/jump.wav'),                                  // Jump sound
+    crash: new Audio('sounds/dying.mp3'),                                // Crash/Death sound
+    click: new Audio('sounds/buttonclick.mp3'),                          // Menu/button click sound
+};
+
+audio.bgm.loop = true;
+audio.bgm.volume = 0.14; // Softer background (was 0.3)
+
+audio.jump.volume = 1.0;  // Louder jump
+
+// Attempt to boost dying.mp3 volume also programmatically on each play for compatibility
+function playSound(s) {
+    if (!audio[s]) return;
+    if (s === 'crash') {
+        audio.crash.volume = 1.0; // Louder crash/death
+    }
+    audio[s].currentTime = 0; // rewind to start
+    audio[s].play();
+}
+
+// --- PLAY BGM on menu load, and ensure it continues ---
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        audio.bgm.play().catch(()=>{}); // Autoplay issues handled gently
+    }, 700);
+});
+
+// --- MENU BUTTON CLICK SOUNDS ---
+document.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') {
+        playSound('click');
+    }
+});

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="starfield" id="starfield"></div>
+    <div id="starfield" class="starfield"></div>
 
     <div id="levelSelectionScreen" class="menuScreen active">
       <div class="menu-content menu-content-small">
@@ -86,19 +86,19 @@
                     <span class="unlock-text">Unlock at Level 2</span>
                 </div>
             </div>
-
-            <div id="char-page-buttons">
-                <button id="back-to-level-button" class="action-button secondary-button">
-                  BACK
-                </button>
-                <button id="start-mission-button-char" class="action-button primary-button">
-                  START LEVEL 1
-                </button>
-            </div>
+            <button id="next-char" class="char-arrow">▶</button>
         </div>
+        
+        <button id="start-button" class="start-button">
+          🎮 START MISSION
+        </button>
+        <div class="game-info">
+          <p><strong>🎯Controls:</strong> A/D to move • SPACE to jump • Q for special power (Planet only) • V to switch viewpoints🎯</p>
+        </div>
+      </div>
     </div>
-    
-    <div id="gameScreen" style="display: none;"> 
+
+    <div id="gameScreen">
       <div id="hud">
         <div id="level">Level: 1</div>
         <div id="score">Score: 0</div>
@@ -110,11 +110,10 @@
       </button> 
       <div id="levelUp"></div>
       <div id="unlock-notification" class="hidden"></div>
-      
-      <div id="gameOverScreen" style="display: none;">
-        <div class="game-over-content-box">
-          <h1 class="game-over-title">💥 MISSION FAILED 💥</h1>
-          <p id="gameOverReason" class="game-over-reason">You crashed into an obstacle!</p>
+      <div id="gameOverScreen">
+        <div style="text-align: center;">
+          <h1 style="color: #ff6b6b; margin-bottom: 20px;">💥MISSION FAILED💥</h1>
+          <p id="gameOverReason" style="font-size: 1.5rem; margin-bottom: 30px;">You crashed into a space obstacle!</p>
           
           <div id="unlock-prompt"></div>
 
