@@ -604,13 +604,18 @@ function setupCharacterSelector() {
         
         if (obj.isUnlocked) { 
             lockEl.classList.add('hidden'); 
-            statusEl.classList.remove('hidden');
-            statusEl.textContent = 'UNLOCKED!';
-            startBtn.disabled = false;
+            // statusEl is not found in index.html, so commenting out to avoid error (but keeping the original structure)
+            // if (statusEl) {
+            //     statusEl.classList.remove('hidden');
+            //     statusEl.textContent = 'UNLOCKED!';
+            // }
+            startBtn.disabled = false; // <--- FIX: Ensure button is enabled when unlocked
             lockOverlayEl.classList.add('hidden'); // NEW: Hide the lock overlay
         } else { 
             lockEl.classList.remove('hidden'); 
-            statusEl.classList.add('hidden'); 
+            // if (statusEl) {
+            //     statusEl.classList.add('hidden');
+            // }
             
             if (obj.unlockText) {
                 lockEl.querySelector('.unlock-text').textContent = obj.unlockText;
@@ -618,7 +623,7 @@ function setupCharacterSelector() {
                 lockEl.querySelector('.unlock-text').textContent = `Unlock at Level ${obj.unlockLevel}`;
             }
             
-            startBtn.disabled = true;
+            startBtn.disabled = true; // <--- FIX: Ensure button is disabled when locked
             lockOverlayEl.classList.remove('hidden'); // NEW: Show the lock overlay
         }
         if (allTexturesLoaded) { 
