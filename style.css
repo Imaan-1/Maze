@@ -15,7 +15,7 @@ body {
     /* CORE NEON COLORS */
     --neon-purple: #C084FC;   /* Primary neon color for main highlights (a bright, warm purple) */
     --neon-pink: #F472B6;     /* Secondary neon color for accents (a vivid pink) */
-    --neon-gold: #FFD700;     /* Accent color for high scores/titles */
+    --neon-gold: #FFD700;     /* Accent color for high scores/titles - Kept for old elements like high score HUD*/
     /* === 🛠️ ADDED NEON BLUE AND REPLACED NEON GREEN === */
     --neon-blue: #38BDF8;     /* New neon blue color */
     
@@ -969,7 +969,8 @@ body {
 
 .quest-item {
     background: rgba(255, 255, 255, 0.05);
-    border: 2px solid rgba(255, 215, 0, 0.3);
+    /* 🛠️ MODIFIED: Default quest border (was yellow/gold) to Neon Blue for unclaimed/uncompleted */
+    border: 2px solid rgba(56, 189, 248, 0.3);
     border-radius: 12px;
     padding: 15px;
     margin-bottom: 15px;
@@ -977,13 +978,15 @@ body {
 }
 
 .quest-item.completed {
+    /* Keeping completed items in the purple theme for consistency */
     border-color: rgba(192, 132, 252, 0.6);
     background: rgba(192, 132, 252, 0.1);
 }
 
 .quest-title {
     font-size: 1.2rem;
-    color: var(--neon-gold);
+    /* 🛠️ MODIFIED: Quest title color from Neon Gold to Neon Blue */
+    color: var(--neon-blue);
     font-weight: bold;
     margin-bottom: 8px;
 }
@@ -995,6 +998,7 @@ body {
 }
 
 .quest-completed-badge {
+    /* Keeping claimed badge green as it indicates 'success' */
     display: inline-block;
     background: linear-gradient(45deg, #22c55e, #10b981);
     color: white;
@@ -1008,10 +1012,13 @@ body {
 .quest-reward-info {
     margin-top: 20px;
     padding: 15px;
-    background: rgba(255, 215, 0, 0.1);
-    border: 1px solid var(--neon-gold);
+    /* 🛠️ MODIFIED: Info box background from yellow/gold to Neon Blue */
+    background: rgba(56, 189, 248, 0.1);
+    /* 🛠️ MODIFIED: Info box border from Neon Gold to Neon Blue */
+    border: 1px solid var(--neon-blue);
     border-radius: 10px;
-    color: var(--neon-gold);
+    /* 🛠️ MODIFIED: Info box text color from Neon Gold to Neon Blue */
+    color: var(--neon-blue);
     font-size: 1.1rem;
 }
 
@@ -1019,21 +1026,24 @@ body {
     width: 100%;
     padding: 15px 30px;
     font-size: 1.3rem;
-    background: linear-gradient(45deg, var(--neon-gold), #f59e0b);
-    color: #1f2937;
+    /* 🛠️ MODIFIED: Claim button gradient from yellow/gold to Neon Blue/Cyan */
+    background: linear-gradient(45deg, var(--neon-blue), #0ea5e9);
+    color: white; /* Changed text to white for better contrast on blue */
     border: none;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
     font-weight: bold;
     margin-top: 20px;
-    box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
+    /* 🛠️ MODIFIED: Claim button shadow from yellow/gold to Neon Blue */
+    box-shadow: 0 5px 20px rgba(56, 189, 248, 0.5);
 }
 
 .claim-rewards-btn:hover:not(:disabled) {
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.7);
-    background: linear-gradient(45deg, #fcd34d, var(--neon-gold));
+    /* 🛠️ MODIFIED: Claim button hover shadow/gradient to Neon Blue/Cyan */
+    box-shadow: 0 8px 25px rgba(56, 189, 248, 0.7);
+    background: linear-gradient(45deg, #0ea5e9, var(--neon-blue));
 }
 
 .claim-rewards-btn:disabled {
@@ -1044,20 +1054,24 @@ body {
 }
 
 .unclaimed-stars-info {
-    background: rgba(255, 215, 0, 0.2);
-    border: 2px solid var(--neon-gold);
+    /* 🛠️ MODIFIED: Unclaimed box background from yellow/gold to Neon Blue */
+    background: rgba(56, 189, 248, 0.2);
+    /* 🛠️ MODIFIED: Unclaimed box border from Neon Gold to Neon Blue */
+    border: 2px solid var(--neon-blue);
     padding: 12px;
     border-radius: 10px;
     margin-top: 15px;
     font-size: 1.2rem;
     font-weight: bold;
-    color: var(--neon-gold);
-    text-shadow: 0 0 10px var(--neon-gold);
+    /* 🛠️ MODIFIED: Unclaimed box text/shadow from Neon Gold to Neon Blue */
+    color: var(--neon-blue);
+    text-shadow: 0 0 10px var(--neon-blue);
 }
 
 /* --- SHOP STYLES --- */
 .stars-display {
     font-size: 1.5rem;
+    /* Keeping the Stars count gold as currency is usually gold/yellow */
     color: var(--neon-gold);
     font-weight: bold;
     margin-bottom: 25px;
@@ -1198,6 +1212,7 @@ body {
   display: flex;
   align-items: center;
     gap: 10px;
+    /* Keeping the Quest Complete Notification icon/text gold/yellow as it collects stars */
     font-size: 2rem;
     font-weight: bold;
     color: var(--neon-gold);
@@ -1262,6 +1277,75 @@ body {
     box-shadow: 0 8px 20px rgba(192, 132, 252, 0.5);
     background: linear-gradient(45deg, var(--neon-purple), var(--neon-pink));
 }
+
+/* --- CUSTOM PURCHASE NOTIFICATION MODAL STYLES --- */
+
+/* Base style for the modal content box */
+.purchase-modal-content {
+    /* Use the primary menu content styling but with a unique border/shadow */
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(30, 10, 50, 0.9)) !important;
+    border: 3px solid var(--neon-pink) !important;
+    box-shadow: 
+        0 0 40px var(--neon-purple),
+        0 0 80px rgba(244, 114, 182, 0.4),
+        inset 0 0 60px rgba(192, 132, 252, 0.1) !important;
+    max-width: 450px;
+    padding: 30px;
+    /* KEY FIX: Ensure all children elements are centered within the block */
+    text-align: center; 
+}
+
+/* Icon (e.g., '🔥' or '🌌') */
+.purchase-modal-icon {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    /* Keeping the icon gold/yellow for consistency with stars being currency */
+    text-shadow: 0 0 15px var(--neon-gold), 0 0 30px var(--neon-gold), 0 0 45px rgba(255, 215, 0, 0.5);
+    line-height: 1; 
+}
+
+/* Title (e.g., 'PURCHASE SUCCESSFUL!') */
+.purchase-modal-title {
+    font-size: 2rem;
+    /* Keeping the title gold/yellow for consistency with stars being currency */
+    color: var(--neon-gold);
+    text-shadow: 0 0 10px var(--neon-gold);
+    margin-bottom: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Message (e.g., 'You can now equip Inferno Rocket.') */
+.purchase-modal-message {
+    font-size: 1.1rem;
+    color: #e5e7eb;
+    margin-bottom: 25px;
+    padding: 0 10px;
+}
+
+/* OK Button (Override generic modal button) */
+#close-purchase-modal-btn {
+    padding: 12px 35px;
+    font-size: 1.2rem;
+    background: linear-gradient(45deg, var(--neon-pink), var(--neon-purple));
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    margin-top: 15px;
+    box-shadow: 0 5px 15px rgba(244, 114, 182, 0.4);
+}
+
+#close-purchase-modal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(192, 132, 252, 0.6);
+    background: linear-gradient(45deg, var(--neon-purple), var(--neon-pink));
+}
+/* --- END CUSTOM PURCHASE NOTIFICATION MODAL STYLES --- */
+
 
 /* === RESPONSIVE DESIGN - FIT EVERYTHING ON SCREEN === */
 @media screen and (max-height: 900px) {
