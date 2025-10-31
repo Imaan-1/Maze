@@ -345,11 +345,15 @@ const audio = {
   jump: new Audio("sounds/jump.wav"),
   crash: new Audio("sounds/dying.mp3"),
   click: new Audio("sounds/buttonclick.mp3"),
+  // --- NEW SOUND ADDED ---
+  collect: new Audio("sounds/collect.mp3"), // Corrected file name to .mp3
 };
 
 audio.bgm.loop = true;
 audio.bgm.volume = 0.14;
 audio.jump.volume = 1.0;
+// --- NEW SOUND VOLUME SETTING ---
+audio.collect.volume = 0.6;
 
 function playSound(s) {
   if (!audio[s]) return;
@@ -1023,6 +1027,69 @@ function createGalaxyBackground() {
 // === END STARFIELD & SHOOTING STAR LOGIC =========================
 // =================================================================
 
+// --- FIXED: CREATE GOLD COLLECTIBLE STAR MODEL (upright + continuous Y-rotation) ---
+function createCollectibleStar() {
+  const group = new THREE.Group();
+
+  // Create a 5-pointed star shape
+  const shape = new THREE.Shape();
+  const outerRadius = 0.3;
+  const innerRadius = 0.15;
+  const spikes = 5;
+  for (let i = 0; i < spikes * 2; i++) {
+    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+    const angle = (i * Math.PI) / spikes;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) shape.moveTo(x, y);
+    else shape.lineTo(x, y);
+  }
+  shape.closePath();
+
+  const extrudeSettings = { depth: 0.1, bevelEnabled: false };
+  const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xffd700,
+    emissive: 0xffd700,
+    emissiveIntensity: 1.5,
+    metalness: 0.8,
+    roughness: 0.3,
+  });
+
+  const star = new THREE.Mesh(geometry, material);
+  // No rotation.x to make the star stand upright
+  star.rotation.y = Math.PI / 2; // initial twist
+  star.castShadow = true;
+  star.receiveShadow = true;
+  group.add(star);
+
+  // Pulse glow and continuous Y-rotation
+  group.userData.update = () => {
+    // Continuous 360-degree rotation on the Y-axis
+    star.rotation.y += 0.05; 
+    
+    const scale = 1 + Math.sin(Date.now() * 0.004) * 0.05;
+    group.scale.set(scale, scale, scale);
+  };
+
+  return group;
+}
+// --- END FIXED: CREATE GOLD COLLECTIBLE STAR MODEL ---
+
+// --- NEW: Function to update the Star Counter HUD ---
+function updateStarCounterHUD() {
+  const starCount = localStorage.getItem("spaceRunnerStars") || "0";
+  const starElement = document.getElementById("stars-count");
+  if (starElement) {
+    starElement.textContent = starCount;
+  }
+  const starHUD = document.getElementById("starCountHUD");
+  if (starHUD) {
+    starHUD.textContent = `⭐ Collected: ${starCount}`;
+  }
+}
+// --- END NEW: Function to update the Star Counter HUD ---
+
 function initGame() {
   function spawnShootingStar() {
     // Geometry is a thin cylinder or box
@@ -1111,6 +1178,11 @@ function initGame() {
     lastSpawnZ,
     animationId;
   let trailMaterial, trailGeometry, trailColor, trailSize; // Trail variables
+  
+  // --- NEW: Collectible Star Array ---
+  const collectibleStars = [];
+  // --- END NEW: Collectible Star Array ---
+
 
   // --- Classes (Box, Player, AsteroidField, UFO, EnergyField, PlasmaShots, QuantumGate) ---
   class Box extends THREE.Mesh {
@@ -1434,6 +1506,28 @@ function initGame() {
     );
   }
 
+  // --- FIXED: STAR SPAWN LOGIC (lower altitude & 10-second frequency) ---
+  let starSpawnInterval;
+  function spawnCollectibleStar() {
+    if (!player || gameState.isGameOver) return;
+
+    const star = createCollectibleStar();
+
+    const trackWidth = 8; // adjust to your track width
+    const x = (Math.random() - 0.5) * trackWidth * 2;
+
+    // ✅ FIXED: Max Y-height capped at 1.0 (on or slightly above track level)
+    const y = 0.3 + Math.random() * 0.7; // Range: 0.3 to 1.0
+
+    // Spawn far in front of the player
+    const z = player.position.z - 100 - Math.random() * 100;
+
+    star.position.set(x, y, z);
+    scene.add(star);
+    collectibleStars.push(star);
+  }
+  // --- END FIXED: STAR SPAWN LOGIC ---
+
   function setupNewGame() {
     isPaused = false;
     // FIX: Ensure pause screens are hidden at start
@@ -1455,7 +1549,12 @@ function initGame() {
     // --- NEW: Shooting Star Setup ---
     if (shootingStarInterval) clearInterval(shootingStarInterval);
     shootingStarInterval = setInterval(spawnShootingStar, 3000); // Spawn a shooting star every 3 seconds
-    // --- END NEW: Shooting Star Setup ---
+    
+    // --- ✅ FIXED: Collectible Star Spawn Interval (10 seconds) ---
+    if (starSpawnInterval) clearInterval(starSpawnInterval);
+    starSpawnInterval = setInterval(spawnCollectibleStar, 10000); // Spawn one every 10 seconds
+    // --- END FIXED: Star Spawn Setup ---
+
 
     // --- MODIFICATION: Speeds adjusted to be even slower ---
     switch (selectedLevel) {
@@ -1480,6 +1579,10 @@ function initGame() {
     obstacles = [];
     trailParticles = [];
     grounds = [];
+    // --- NEW: Clean collectible stars on game start ---
+    collectibleStars.forEach((s) => scene.remove(s));
+    collectibleStars.length = 0;
+    // --- END NEW: Clean collectible stars on game start ---
 
     // --- NEW TRAIL SETUP ---
     const charData = PLAYER_OBJECTS[selectedObjectId];
@@ -1573,6 +1676,10 @@ function initGame() {
       "highScore"
     ).innerText = `High Score: ${highScores[selectedLevel]}`;
 
+    // --- NEW: Update star HUD on game start ---
+    updateStarCounterHUD();
+    // --- END NEW: Update star HUD on game start ---
+
     if (animationId) cancelAnimationFrame(animationId);
     animate();
   }
@@ -1599,6 +1706,56 @@ function initGame() {
     lastSpawnZ -= sI;
   }
 
+  // --- NEW: Collision Check for Stars ---
+  function checkStarCollection() {
+    if (!player) return;
+    // Use the visual model for star collision, as it's the visible part
+    const playerBox = new THREE.Box3().setFromObject(player.visualModel);
+
+    for (let i = collectibleStars.length - 1; i >= 0; i--) {
+      const star = collectibleStars[i];
+      // Get world-space bounding box for the star
+      const starBox = new THREE.Box3().setFromObject(star);
+      
+      if (playerBox.intersectsBox(starBox)) {
+        // Star collected!
+
+        playSound("collect");
+
+        // Add star to localStorage
+        const stars = parseInt(
+          localStorage.getItem("spaceRunnerStars") || "0",
+          10
+        );
+        localStorage.setItem("spaceRunnerStars", String(stars + 1));
+        
+        // --- NEW: Update star HUD immediately after collection ---
+        updateStarCounterHUD();
+        // --- END NEW: Update star HUD immediately after collection ---
+
+        // Remove from list immediately
+        collectibleStars.splice(i, 1);
+
+        // Visual fade out
+        const mat = star.children[0].material;
+        let opacity = 1;
+        const fade = setInterval(() => {
+          opacity -= 0.05;
+          mat.emissiveIntensity = opacity * 2;
+          star.scale.multiplyScalar(0.97);
+          
+          if (opacity <= 0) {
+            clearInterval(fade);
+            scene.remove(star);
+            star.children[0].geometry.dispose();
+            mat.dispose();
+          }
+        }, 30);
+      }
+    }
+  }
+  // --- END NEW: Collision Check for Stars ---
+
   // --- MODIFICATION: Updated triggerGameOver with new button logic ---
   function triggerGameOver(r) {
     if (gameState.isGameOver) return;
@@ -1606,9 +1763,10 @@ function initGame() {
 
     playSound("crash"); // Play crash SFX once only
 
-    // --- NEW: Stop Shooting Star Spawner ---
+    // --- NEW: Stop Shooting Star Spawner and Star Spawner ---
     if (shootingStarInterval) clearInterval(shootingStarInterval);
-    // --- END NEW: Stop Shooting Star Spawner ---
+    if (starSpawnInterval) clearInterval(starSpawnInterval);
+    // --- END NEW: Stop Shooting Star Spawner and Star Spawner ---
 
     // Track quest progress for death and score
     updateQuestProgress("deaths");
@@ -1752,10 +1910,12 @@ function initGame() {
     obstacles.forEach((o) => scene.remove(o.group));
     grounds.forEach((g) => scene.remove(g));
     trailParticles.forEach((p) => scene.remove(p));
-    // --- NEW: Cleanup Shooting Stars ---
+    // --- NEW: Cleanup Shooting Stars and Collectible Stars ---
     shootingStars.forEach((s) => scene.remove(s));
     shootingStars = [];
-    // --- END NEW: Cleanup Shooting Stars ---
+    collectibleStars.forEach((s) => scene.remove(s));
+    collectibleStars.length = 0; // Ensures the array is empty for a fresh start
+    // --- END NEW: Cleanup Shooting Stars and Collectible Stars ---
     obstacles = [];
     grounds = [];
     trailParticles = [];
@@ -1771,9 +1931,10 @@ function initGame() {
   function backToMenu() {
     if (animationId) cancelAnimationFrame(animationId);
 
-    // --- NEW: Stop Shooting Star Spawner ---
+    // --- NEW: Stop Shooting Star Spawner and Star Spawner ---
     if (shootingStarInterval) clearInterval(shootingStarInterval);
-    // --- END NEW: Stop Shooting Star Spawner ---
+    if (starSpawnInterval) clearInterval(starSpawnInterval);
+    // --- END NEW: Stop Shooting Star Spawner and Star Spawner ---
 
     isPaused = false;
     pauseButton.style.display = "none";
@@ -1967,6 +2128,11 @@ function initGame() {
         player.visualModel.userData.customAnimate(time);
       }
     }
+    
+    // --- NEW: Update Collectible Stars ---
+    collectibleStars.forEach((s) => s.userData.update && s.userData.update());
+    checkStarCollection();
+    // --- END NEW: Update Collectible Stars ---
 
     // --- NEW: Anchor the starfield to the player/camera ---
     if (galaxy && player) {
