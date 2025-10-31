@@ -2554,6 +2554,7 @@ function renderShopScreen() {
     html += `<div class="${itemClass}">`;
     html += `<div class="shop-item-icon">${item.icon}</div>`;
     html += `<div class="shop-item-name">${item.name}</div>`;
+    html += `<div class="shop-item-description">${item.description}</div>`;
     html += `<div class="shop-item-price">⭐ ${item.price}</div>`;
 
     if (owned) {
