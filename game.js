@@ -366,6 +366,33 @@ function playSound(s) {
 
 // --- INITIAL SETUP & GLOBAL FUNCTIONS ---
 
+// --- NEW: Custom Purchase Notification Function ---
+function showPurchaseNotification(title, message, icon) {
+  const modal = document.getElementById("purchaseNotificationModal");
+  document.getElementById("purchase-title").textContent = title;
+  document.getElementById("purchase-message").textContent = message;
+  document.getElementById("purchase-icon").textContent = icon;
+
+  modal.style.display = "flex";
+
+  const closeBtn = document.getElementById("close-purchase-modal-btn");
+  // Ensure we only have one handler attached at a time
+  const closeHandler = () => {
+    modal.style.display = "none";
+    closeBtn.removeEventListener("click", closeHandler);
+    playSound("click");
+  };
+
+  // Re-assign the click handler every time the modal is shown
+  // to ensure a fresh event listener that only closes the current instance.
+  // Note: For a clean implementation, you might remove the event listener 
+  // before adding a new one, but removing and re-adding is sufficient.
+  // In this case, we remove the handler *after* it runs to keep it clean.
+  closeBtn.removeEventListener("click", closeHandler); 
+  closeBtn.addEventListener("click", closeHandler);
+}
+// --- END NEW: Custom Purchase Notification Function ---
+
 loadTextures(() => {
   setupMenu();
   setupCharacterSelector();
@@ -1344,7 +1371,7 @@ function initGame() {
 
       // --- ❗️ SET OPACITY TO 0 TO HIDE IT ---
       collider.material.transparent = true;
-      collider.material.opacity = 0.5; // 👈 Set to 0.0 when done!
+      collider.material.opacity = 0.0; // 👈 Set to 0.0 when done!
       // (Set to 0.5 to see the hitbox while you test)
 
       this.group.add(collider);
@@ -2529,9 +2556,9 @@ function renderShopScreen() {
       const equippedItem = SHOP_ITEMS.find((item) => item.id === equippedSkin);
       if (equippedItem) {
         equippedInfoDiv.innerHTML = `
-                    <div style="background: rgba(34, 197, 94, 0.1); border: 2px solid #22c55e; padding: 12px; border-radius: 10px;">
-                        <div style="color: #22c55e; font-weight: bold; margin-bottom: 8px;">Currently Equipped: ${equippedItem.icon} ${equippedItem.name}</div>
-                        <button class="shop-buy-btn" style="background: linear-gradient(45deg, #f59e0b, #ef4444); font-size: 0.9rem; padding: 8px 20px;" onclick="unequipSkin()">REMOVE SKIN</button>
+                    <div style="background: rgba(34, 197, 94, 0.1); border: 2px solid var(--neon-blue); padding: 12px; border-radius: 10px;">
+                        <div style="color: var(--neon-blue); font-weight: bold; margin-bottom: 8px;">Currently Equipped: ${equippedItem.icon} ${equippedItem.name}</div>
+                        <button class="shop-buy-btn" style="background: linear-gradient(45deg, var(--neon-purple), var(--neon-pink)); color: white; font-size: 0.9rem; padding: 8px 20px;" onclick="unequipSkin()">REMOVE SKIN</button>
                     </div>
                 `;
       }
@@ -2559,7 +2586,7 @@ function renderShopScreen() {
 
     if (owned) {
       if (isEquipped) {
-        html += `<div class="shop-owned-badge" style="background: linear-gradient(45deg, #22c55e, #10b981);">✓ EQUIPPED</div>`;
+        html += `<div class="shop-owned-badge" style="background: linear-gradient(45deg, var(--neon-blue), #0ea5e9);">✓ EQUIPPED</div>`;
       } else {
         html += `<button class="shop-buy-btn" style="background: linear-gradient(45deg, #3b82f6, #60a5fa);" onclick="equipShopItem('${item.id}')">EQUIP</button>`;
       }
@@ -2587,12 +2614,22 @@ window.buyShopItem = function (itemId) {
   const stars = parseInt(localStorage.getItem("spaceRunnerStars") || "0", 10);
 
   if (stars < item.price) {
-    alert("Not enough stars!");
+    // MODIFIED: Use custom modal instead of alert
+    showPurchaseNotification(
+      "INSUFFICIENT FUNDS",
+      `You need ${item.price - stars} more stars to purchase the ${item.name}.`,
+      "❌"
+    );
     return;
   }
 
   if (shopPurchases.includes(itemId)) {
-    alert("Already owned!");
+    // MODIFIED: Use custom modal instead of alert
+    showPurchaseNotification(
+      "ALREADY OWNED",
+      `You already own the ${item.name}! Check your equipped skin.`,
+      "✅"
+    );
     return;
   }
 
@@ -2601,7 +2638,13 @@ window.buyShopItem = function (itemId) {
   saveShopPurchases(shopPurchases);
   renderShopScreen();
   playSound("click");
-  alert(`Purchased ${item.name}! You can now equip it.`);
+  
+  // MODIFIED: Use custom modal instead of alert
+  showPurchaseNotification(
+    "PURCHASE SUCCESSFUL!",
+    `You can now equip the ${item.name}!`,
+    item.icon
+  );
 };
 
 window.equipShopItem = function (itemId) {
@@ -2609,7 +2652,11 @@ window.equipShopItem = function (itemId) {
   if (!item) return;
 
   if (!shopPurchases.includes(itemId)) {
-    alert("You must purchase this item first!");
+    showPurchaseNotification(
+        "EQUIP FAILED",
+        "You must purchase this item first!",
+        "🛑"
+    );
     return;
   }
 
