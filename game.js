@@ -135,7 +135,7 @@ const PLAYER_OBJECTS = {
     trailColor: 0x66ff66, // LESS INTENSE NEON GREEN
     trailSize: 0.2,
     trailMaterial: null,
-    textures: {},
+    textures: { core: "orb" }, // 🛠️ ADDED a 'core' texture link
   },
 };
 let selectedObjectId = "rocket";
@@ -311,6 +311,19 @@ const SHOP_ITEMS = [
     color: 0x7dd3fc,
     trailColor: 0xbfdbfe,
   },
+  // 🛠️ ADDED: Quantum Decahedron skin for Hyper Cube
+  {
+    id: "decahedron_skin",
+    name: "Quantum Decahedron",
+    icon: "💎",
+    price: 150,
+    type: "skin",
+    description: "Transforms Hyper Cube into a swirling blue decahedron",
+    basedOn: "hypercube",
+    color: 0x38bdf8, // Neon Blue color
+    trailColor: 0x67e8f9, // Cyan trail
+  },
+  // 🛠️ END ADDED
 ];
 
 function loadShopPurchases() {
@@ -667,7 +680,16 @@ function setupCharacterSelector() {
     const characterObj = PLAYER_OBJECTS[selectedObjectId];
     console.log("Creating model for:", selectedObjectId, characterObj);
 
-    currentModel = characterObj.createModel();
+    // 🛠️ Check for equipped skin override
+    let skinOverride = null;
+    if (equippedSkin && characterObj.createModel === createHyperCubeModel) {
+        const skinItem = SHOP_ITEMS.find(item => item.id === equippedSkin && item.basedOn === selectedObjectId);
+        if (skinItem) {
+            skinOverride = skinItem;
+        }
+    }
+
+    currentModel = characterObj.createModel(skinOverride);
     currentModel.rotation.x = 0;
     currentModel.position.set(0, 0, 0);
     scene.add(currentModel);
@@ -930,47 +952,146 @@ function createOrbModel() {
   return modelGroup;
 }
 
-// --- NEW MODEL: Hyper Cube (Trail color updated to match new green) ---
-function createHyperCubeModel() {
+// --- MODIFIED MODEL: Hyper Cube / Quantum Decahedron ---
+function createHyperCubeModel(skinOverride) {
   const modelGroup = new THREE.Group();
 
-  // 1. Main Cube - Glowing Wireframe
-  const geometry = new THREE.BoxGeometry(1.2, 1.2, 1.2);
-  const material = new THREE.MeshBasicMaterial({
-    color: 0x66ff66, // LESS INTENSE NEON GREEN
-    wireframe: true,
-    transparent: true,
-    opacity: 0.8,
-    blending: THREE.AdditiveBlending,
+  // --- 🛠️ 1. CHECK FOR EQUIPPED SKIN ---
+  let isDecahedronSkin = false;
+  let customColor = 0x66ff66; // Default Neon Green
+
+  if (skinOverride && skinOverride.id === "decahedron_skin") {
+    isDecahedronSkin = true;
+    customColor = skinOverride.color;
+  } else if (equippedSkin === "decahedron_skin") {
+    isDecahedronSkin = true;
+    const skinItem = SHOP_ITEMS.find((i) => i.id === "decahedron_skin");
+    if (skinItem) customColor = skinItem.color;
+  }
+  // --- END CHECK ---
+
+  // 2. Main Shape - Wireframe Cube or Decahedron
+  let geometry;
+  if (isDecahedronSkin) {
+    // 🛠️ USE ICOSAHEDRON GEOMETRY FOR A DECAHEDRON SHAPE (20 faces, high-poly look)
+    geometry = new THREE.IcosahedronGeometry(1.2, 0); 
+    modelGroup.userData.shape = 'decahedron';
+  } else {
+    geometry = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+    modelGroup.userData.shape = 'cube';
+  }
+
+  // 🛠️ Use a Shader Material for the Decahedron to make it swirl and glow
+  const material = isDecahedronSkin ? new THREE.ShaderMaterial({
+      uniforms: {
+          time: { value: 0.0 },
+          color: { value: new THREE.Color(customColor) },
+      },
+      vertexShader: `
+          varying vec2 vUv;
+          void main() {
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+      `,
+      fragmentShader: `
+          uniform float time;
+          uniform vec3 color;
+          varying vec2 vUv;
+
+          void main() {
+              float swirl = sin(vUv.x * 10.0 + time * 0.5) * cos(vUv.y * 10.0 + time * 0.3);
+              float opacity = 0.8 + sin(time) * 0.1;
+              gl_FragColor = vec4(color * (1.0 + swirl * 0.5), opacity);
+          }
+      `,
+      wireframe: true,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+  }) : new THREE.MeshBasicMaterial({
+      color: customColor,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
   });
 
-  const cube = new THREE.Mesh(geometry, material);
 
-  // 2. Inner Core - Solid for a better center point
-  const coreGeo = new THREE.SphereGeometry(0.2, 8, 8);
-  const coreMat = new THREE.MeshBasicMaterial({
-    color: 0x66ff66, // LESS INTENSE NEON GREEN
-    emissive: 0x66ff66, // LESS INTENSE NEON GREEN
-    emissiveIntensity: 1.5,
+  const shapeMesh = new THREE.Mesh(geometry, material);
+  if (isDecahedronSkin) {
+      shapeMesh.userData.shaderMaterial = material;
+  }
+  
+  // 3. Inner Core - Swirling Orb
+  const coreMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+          time: { value: 0.0 },
+          color: { value: new THREE.Color(customColor) },
+      },
+      vertexShader: `
+              varying vec2 vUv;
+              varying vec3 vPosition;
+              void main() {
+                  vUv = uv;
+                  vPosition = position;
+                  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+              }
+          `,
+      fragmentShader: `
+              uniform float time;
+              uniform vec3 color;
+              varying vec2 vUv;
+              varying vec3 vPosition;
+
+              void main() {
+                  // A simple wave/swirl effect for the core
+                  float swirl = sin(vUv.x * 5.0 + time * 2.0) * cos(vUv.y * 5.0 + time * 1.5);
+                  swirl += sin(vUv.y * 8.0 + time * 3.0) * 0.5;
+                  float glow = 1.0 - length(vUv - 0.5) * 2.0;
+                  glow = max(0.0, glow + swirl * 0.3);
+                  glow = pow(glow, 2.0);
+                  gl_FragColor = vec4(color * glow, glow);
+              }
+          `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
   });
-  const core = new THREE.Mesh(coreGeo, coreMat);
+  
+  const coreGeo = new THREE.SphereGeometry(0.2, 16, 16);
+  const core = new THREE.Mesh(coreGeo, coreMaterial);
+  core.userData.shaderMaterial = coreMaterial; // Mark for animation updates
 
-  modelGroup.add(cube);
+  modelGroup.add(shapeMesh);
   modelGroup.add(core);
 
-  // Custom animation for the cube for the selector and in-game
+  // Custom animation for the cube/decahedron for the selector and in-game
   modelGroup.userData.customAnimate = (time) => {
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.02;
-    cube.rotation.z += 0.015;
+    // Rotate the outer shape
+    shapeMesh.rotation.x += 0.01;
+    shapeMesh.rotation.y += 0.02;
+    shapeMesh.rotation.z += 0.015;
+    
+    // Rotate the inner core slower
+    core.rotation.y += 0.005;
+
+    // Update time uniforms for both shaders
+    const timeValue = time * 0.0005;
+    if (shapeMesh.userData.shaderMaterial) {
+        shapeMesh.userData.shaderMaterial.uniforms.time.value = timeValue;
+    }
+    if (core.userData.shaderMaterial) {
+        core.userData.shaderMaterial.uniforms.time.value = timeValue;
+    }
+
     // Pulse the scale for an energy effect
     const scalePulse = 1.0 + Math.sin(time * 0.005) * 0.05;
-    cube.scale.set(scalePulse, scalePulse, scalePulse);
+    modelGroup.scale.set(scalePulse, scalePulse, scalePulse);
   };
 
   return modelGroup;
 }
-// --- END 3D MODEL CREATION FUNCTIONS ---
+// --- END MODIFIED MODEL: Hyper Cube / Quantum Decahedron ---
 
 // Apply skin colors to player model
 function applySkinToPlayer(player, skinItem) {
@@ -1244,7 +1365,18 @@ function initGame() {
       this.width = objData.colliderSize.width;
       this.height = objData.colliderSize.height;
       this.depth = objData.colliderSize.depth;
-      this.visualModel = objData.createModel();
+      
+      // 🛠️ Check for equipped skin override for model creation
+      let skinOverride = null;
+      if (equippedSkin && objData.createModel === createHyperCubeModel) {
+          const skinItem = SHOP_ITEMS.find(item => item.id === equippedSkin && item.basedOn === characterId);
+          if (skinItem) {
+              skinOverride = skinItem;
+          }
+      }
+
+      this.visualModel = objData.createModel(skinOverride); // Pass override to model creator
+
       if (characterId === "rocket") {
         this.visualModel.rotation.x = -Math.PI / 2;
         this.visualModel.position.z = -0.2;
@@ -1650,8 +1782,15 @@ function initGame() {
     // Apply equipped skin if any
     if (equippedSkin) {
       const skinItem = SHOP_ITEMS.find((item) => item.id === equippedSkin);
-      if (skinItem && skinItem.basedOn === selectedObjectId) {
-        applySkinToPlayer(player, skinItem);
+      if (
+        skinItem &&
+        skinItem.basedOn === selectedObjectId
+        // Note: applySkinToPlayer only applies StandardMaterial colors, 
+        // the HyperCube shader logic is handled inside createHyperCubeModel now.
+      ) {
+        if (selectedObjectId !== 'hypercube') {
+          applySkinToPlayer(player, skinItem);
+        }
       }
     }
 
@@ -1896,7 +2035,7 @@ function initGame() {
           });
         } else {
           if (c.material.isShaderMaterial) {
-            // Handle shader material (the orb)
+            // Handle shader material (the orb or hypercube)
             c.material.uniforms.color.value.set(0xd1201b); // Set the color uniform to red
           } else if (c.material.color) {
             // Handle standard materials (rocket, etc.)
@@ -2148,11 +2287,12 @@ function initGame() {
 
     const time = Date.now();
     if (player.visualModel) {
-      if (player.visualModel.userData.shaderMaterial) {
-        player.visualModel.userData.shaderMaterial.uniforms.time.value += 0.05;
-      }
+      // 🛠️ Always check for customAnimate now, as the HyperCube uses it
       if (player.visualModel.userData.customAnimate) {
         player.visualModel.userData.customAnimate(time);
+      } else if (player.visualModel.userData.shaderMaterial) {
+        // Fallback for non-HyperCube models that use shaders (e.g., Orb)
+        player.visualModel.userData.shaderMaterial.uniforms.time.value += 0.05;
       }
     }
     
