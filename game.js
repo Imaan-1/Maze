@@ -968,7 +968,7 @@ function initGame() {
     // MODIFIED: startGame now removes ALL menu screens
     startGame = () => {
         document.querySelectorAll('.menuScreen').forEach(screen => screen.classList.remove('active'));
-        document.getElementById('gameScreen').style.display = 'block';
+        document.getElementById('gameScreen').classList.remove('hidden');
         setupNewGame();
     };
     function createGalaxyBackground() { 
