@@ -1053,10 +1053,15 @@ function initGame() {
     scene.add(new THREE.AmbientLight(0x87CEEB, .5));
     const keys = { a: { pressed: false }, d: { pressed: false } };
 
-    // MODIFIED: startGame now removes ALL menu screens
+    // MODIFIED: startGame now removes ALL menu screens and ensures gameScreen is visible
     startGame = () => {
+        // 1. Hide ALL menu screens FIRST
         document.querySelectorAll('.menuScreen').forEach(screen => screen.classList.remove('active'));
+
+        // 2. Make the gameScreen visible IMMEDIATELY
         document.getElementById('gameScreen').classList.remove('hidden');
+
+        // 3. Setup and start the rendering loop
         setupNewGame();
     };
     function boxCollision({box1,box2}){const b1p=new THREE.Vector3();box1.getWorldPosition(b1p);const b2p=new THREE.Vector3();box2.getWorldPosition(b2p);const b1=box1.geometry.parameters;const b2=box2.geometry.parameters;return(Math.abs(b1p.x-b2p.x)*2<(b1.width+b2.width))&&(Math.abs(b1p.y-b2p.y)*2<(b1.height+b2.height))&&(Math.abs(b1p.z-b2p.z)*2<(b1.depth+b2.depth))}
@@ -1382,7 +1387,7 @@ function initGame() {
 
         cleanUpScene();
         document.getElementById('gameOverScreen').style.display = 'none';
-        document.getElementById('gameScreen').style.display = 'none';
+        document.getElementById('gameScreen').classList.add('hidden'); // Use class list for consistency
 
         // Show the primary menu screen
         showScreen('levelSelectionScreen');
