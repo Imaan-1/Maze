@@ -887,6 +887,90 @@ function applySkinToPlayer(player, skinItem) {
     console.log(`Applied skin: ${skinItem.name} with color ${skinItem.color.toString(16)}`);
 }
 
+// =================================================================
+// === NEW: STARFIELD & SHOOTING STAR LOGIC ========================
+// =================================================================
+
+// New global array to hold the THREE.js shooting stars
+let shootingStars = [];
+
+// Global variable for the shooting star interval ID
+let shootingStarInterval;
+
+// Function to create a single THREE.js shooting star
+function spawnShootingStar() {
+    // Geometry is a thin cylinder or box
+    const geometry = new THREE.CylinderGeometry(0.05, 0.0, 15, 32); 
+    const material = new THREE.MeshBasicMaterial({ 
+        color: 0xffffff, 
+        transparent: true, 
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending // Makes it glow
+    });
+    
+    const star = new THREE.Mesh(geometry, material);
+    
+    // Random position far in front of the camera, high up
+    const x = (Math.random() - 0.5) * 60;
+    const y = 20 + Math.random() * 20;
+    // Set it far in front of the player, in the visible distance (relative to player's Z)
+    const z = player.position.z - 200 - Math.random() * 100; 
+    
+    star.position.set(x, y, z);
+    
+    // Rotate to give a diagonal trail look
+    star.rotation.z = Math.PI / 4 + (Math.random() * 0.5 - 0.25); 
+    star.rotation.x = Math.PI / 2; // Point it back
+    
+    // Store properties for animation and cleanup
+    star.userData.speed = 0.5 + Math.random() * 0.5;
+    star.userData.lifetime = 0;
+    star.userData.maxLifetime = 100; // Frames before removal
+    
+    scene.add(star);
+    shootingStars.push(star);
+}
+
+// MODIFIED: createGalaxyBackground now creates static stars that are always visible
+let galaxy; // Declare galaxy globally so it can be accessed in animate()
+
+function createGalaxyBackground() { 
+    const particleCount = 8000; 
+    const positions = []; 
+    // Increased the size of the box for the stars to spread out more
+    const range = 500; 
+    for (let i = 0; i < particleCount; i++) { 
+        // Use a box to distribute stars in 3D space
+        const x = (Math.random() - 0.5) * range; 
+        const y = (Math.random() - 0.5) * range; 
+        const z = (Math.random() - 0.5) * range; 
+        positions.push(x, y, z); 
+    } 
+    const geometry = new THREE.BufferGeometry(); 
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); 
+    const material = new THREE.PointsMaterial({ 
+        size: 0.15, // Small size for distant stars
+        color: 0xffffff, 
+        transparent: true, 
+        opacity: 0.9, 
+        depthWrite: false // Important: Allows stars to be seen even if they are far away
+    }); 
+    
+    // Assign to global variable
+    galaxy = new THREE.Points(geometry, material); 
+    
+    // Set a very low renderOrder to ensure it renders behind all obstacles and ground
+    galaxy.renderOrder = -999; 
+    
+    // Initially place stars far away
+    galaxy.position.z = -200; 
+    
+    return galaxy; 
+}
+// =================================================================
+// === END STARFIELD & SHOOTING STAR LOGIC =========================
+// =================================================================
+
 function initGame() {
     let isFirstPerson = false;
     let isPaused = false;
@@ -960,7 +1044,11 @@ function initGame() {
 
 
     const obstacleTypes = [AsteroidField, PlasmaShots, EnergyField, UFO, QuantumGate];
-    const galaxy = createGalaxyBackground(); scene.add(galaxy);
+    
+    // --- MODIFIED: Create, but don't add to scene yet ---
+    createGalaxyBackground(); 
+    // --- END MODIFIED ---
+    
     const spaceLight = new THREE.DirectionalLight(0xffffff, 1.5); spaceLight.position.set(5, 5, 2); spaceLight.castShadow = true; scene.add(spaceLight);
     scene.add(new THREE.AmbientLight(0x87CEEB, .5));
     const keys = { a: { pressed: false }, d: { pressed: false } };
@@ -971,30 +1059,6 @@ function initGame() {
         document.getElementById('gameScreen').classList.remove('hidden');
         setupNewGame();
     };
-    function createGalaxyBackground() { 
-        const particleCount = 8000; 
-        const positions = []; 
-        for (let i = 0; i < particleCount; i++) { 
-            const radius = Math.random() * 300 + 30; 
-            const angle = Math.random() * Math.PI * 2; 
-            const x = Math.cos(angle) * radius; 
-            const y = Math.random() * 80 - 20; // Spread from y=-20 to y=60 (covers entire visible area)
-            const z = Math.sin(angle) * radius; 
-            positions.push(x, y, z); 
-        } 
-        const geometry = new THREE.BufferGeometry(); 
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); 
-        const material = new THREE.PointsMaterial({ 
-            size: 0.15, 
-            color: 0xffffff, 
-            transparent: true, 
-            opacity: 0.9, 
-            depthWrite: false 
-        }); 
-        const galaxy = new THREE.Points(geometry, material); 
-        galaxy.renderOrder = -999; // Ensure it renders behind everything
-        return galaxy; 
-    }
     function boxCollision({box1,box2}){const b1p=new THREE.Vector3();box1.getWorldPosition(b1p);const b2p=new THREE.Vector3();box2.getWorldPosition(b2p);const b1=box1.geometry.parameters;const b2=box2.geometry.parameters;return(Math.abs(b1p.x-b2p.x)*2<(b1.width+b2.width))&&(Math.abs(b1p.y-b2p.y)*2<(b1.height+b2.height))&&(Math.abs(b1p.z-b2p.z)*2<(b1.depth+b2.depth))}
 
     function setupNewGame() {
@@ -1013,6 +1077,11 @@ function initGame() {
 
         // Reset run-only quest progress
         resetQuestProgressForRun();
+
+        // --- NEW: Shooting Star Setup ---
+        if (shootingStarInterval) clearInterval(shootingStarInterval);
+        shootingStarInterval = setInterval(spawnShootingStar, 3000); // Spawn a shooting star every 3 seconds
+        // --- END NEW: Shooting Star Setup ---
 
         // --- MODIFICATION: Speeds adjusted to be even slower ---
         switch(selectedLevel) {
@@ -1077,6 +1146,11 @@ function initGame() {
         }
 
         scene.add(player);
+        
+        // --- NEW: Add starfield to player's group, not scene directly ---
+        player.add(galaxy);
+        // --- END NEW ---
+        
         // === 🛠️ MODIFIED GROUND CREATION TO USE TEXTURE ===
         const groundTexture = textureCache['spaceshipFloor'];
         if (groundTexture) {
@@ -1138,6 +1212,10 @@ function initGame() {
         gameState.isGameOver=true;
 
         playSound('crash'); // Play crash SFX once only
+        
+        // --- NEW: Stop Shooting Star Spawner ---
+        if (shootingStarInterval) clearInterval(shootingStarInterval);
+        // --- END NEW: Stop Shooting Star Spawner ---
 
         // Track quest progress for death and score
         updateQuestProgress('deaths');
@@ -1263,7 +1341,26 @@ function initGame() {
         gOS.style.display='block';
     }
 
-    function cleanUpScene() { if (player) scene.remove(player); obstacles.forEach(o => scene.remove(o.group)); grounds.forEach(g => scene.remove(g)); trailParticles.forEach(p => scene.remove(p)); obstacles = []; grounds = []; trailParticles = []; }
+    function cleanUpScene() { 
+        if (player) {
+            // --- NEW: Remove starfield from player before removing player ---
+            player.remove(galaxy);
+            scene.remove(player); 
+        }
+        // --- NEW: Add galaxy back to scene so it's not disposed with player, 
+        //          but just sitting there waiting to be re-parented ---
+        scene.add(galaxy); 
+        // --- END NEW ---
+        
+        obstacles.forEach(o => scene.remove(o.group)); 
+        grounds.forEach(g => scene.remove(g)); 
+        trailParticles.forEach(p => scene.remove(p)); 
+        // --- NEW: Cleanup Shooting Stars ---
+        shootingStars.forEach(s => scene.remove(s));
+        shootingStars = [];
+        // --- END NEW: Cleanup Shooting Stars ---
+        obstacles = []; grounds = []; trailParticles = []; 
+    }
 
     function resetGame(){
         document.getElementById('gameOverScreen').style.display = 'none';
@@ -1274,6 +1371,10 @@ function initGame() {
     // MODIFIED: backToMenu now shows the Level Selection Screen
     function backToMenu() {
         if(animationId) cancelAnimationFrame(animationId);
+        
+        // --- NEW: Stop Shooting Star Spawner ---
+        if (shootingStarInterval) clearInterval(shootingStarInterval);
+        // --- END NEW: Stop Shooting Star Spawner ---
 
         isPaused = false;
         pauseButton.style.display = 'none';
@@ -1446,6 +1547,40 @@ function initGame() {
                 player.visualModel.userData.customAnimate(time);
             }
         }
+        
+        // --- NEW: Anchor the starfield to the player/camera ---
+        if (galaxy && player) {
+            // Keep the galaxy positioned far behind the player and slightly below to fill the background
+            galaxy.position.set(0, 0, -300); 
+            // The player's group rotation causes the starfield to rotate as the player moves (galaxy is a child of player)
+            galaxy.rotation.y += 0.0001; 
+        }
+        // --- END NEW ---
+
+        // --- NEW: Update Shooting Stars (Permanent Background Fix) ---
+        for (let i = shootingStars.length - 1; i >= 0; i--) {
+            const star = shootingStars[i];
+            
+            // Move the star (shooting diagonally towards the player/camera)
+            star.position.z += star.userData.speed * 2; 
+            star.position.y -= star.userData.speed * 0.1;
+            
+            star.userData.lifetime++;
+            
+            // Fade and remove after maxLifetime
+            if (star.userData.lifetime > star.userData.maxLifetime) {
+                star.material.opacity *= 0.95;
+            }
+            
+            // Remove if completely faded or too close to the player
+            if (star.material.opacity < 0.05 || star.position.z > player.position.z) {
+                scene.remove(star);
+                shootingStars.splice(i, 1);
+                star.geometry.dispose(); 
+                star.material.dispose(); 
+            }
+        }
+        // --- END NEW: Update Shooting Stars ---
 
         if (isFirstPerson) {
             const fpHeight = player.height * 1.4;
@@ -1601,7 +1736,8 @@ function initGame() {
 
         player.velocity.x=0;player.velocity.z=gameConfig.playerSpeed;
         if(keys.a.pressed)player.velocity.x=-.05;else if(keys.d.pressed)player.velocity.x=.05;
-        galaxy.rotation.y += 0.0001;
+        // galaxy rotation is handled in the new block above
+        
 
         if (!gameState.isGameOver && trailParticles.length < 50) {
             const trailParticle = new THREE.Mesh(trailGeometry, trailMaterial.clone());
